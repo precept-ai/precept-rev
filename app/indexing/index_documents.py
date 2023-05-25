@@ -8,7 +8,7 @@ from db_engine import Session
 from indexing.bm25_index import Bm25Index
 from indexing.faiss_index import FaissIndex
 from models import bi_encoder
-from parsers.pdf import split_PDF_into_paragraphs
+# from parsers.pdf import split_PDF_into_paragraphs
 from paths import IS_IN_DOCKER
 from schemas import Document, Paragraph
 from langchain.schema import Document as PDFDocument
