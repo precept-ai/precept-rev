@@ -48,7 +48,12 @@ export const ResultModal = (props: ResultModalProps) => {
                 Open
               </button>
             </a>
-            <a className="text-black" href={getDownloadUrl(props.result)}>
+            <a
+              className="text-black"
+              href={getDownloadUrl(props.result)}
+              target="_blank"
+              rel="noreferrer"
+            >
               Download
             </a>
           </div>
