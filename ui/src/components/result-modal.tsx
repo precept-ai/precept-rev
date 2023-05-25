@@ -15,7 +15,10 @@ export const ResultModal = (props: ResultModalProps) => {
       className="fixed top-0 left-0 w-screen h-screen flex flex-row justify-center items-center bg-[rgba(0, 0, 0, 0.1)] z-2"
       onClick={props.closeModal}
     >
-      <div className="w-4/5 h-[75vh] flex flex-row justify-center items-start p-[20px] gap-[30px] z-3 bg-[#fff] rounded-[10px]">
+      <div
+        className="w-4/5 h-[75vh] flex flex-row justify-center items-start p-[20px] gap-[30px] z-4 bg-[#fff] rounded-[10px]"
+        onClick={() => {}}
+      >
         <div className="w-[144px] h-[144px]">
           {getBigIcon({
             resultDetails: props.result,
@@ -48,7 +51,12 @@ export const ResultModal = (props: ResultModalProps) => {
                 Open
               </button>
             </a>
-            <a className="text-black" href={getDownloadUrl(props.result)}>
+            <a
+              className="text-black"
+              href={getDownloadUrl(props.result)}
+              target="_blank"
+              rel="noreferrer"
+            >
               Download
             </a>
           </div>
