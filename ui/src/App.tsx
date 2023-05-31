@@ -12,11 +12,12 @@ import GoogleDrivePng from "./assets/images/Drive-png.png";
 import { ReactComponent as SearchIcon } from "./assets/images/search-icon.svg";
 import { ReactComponent as ProfileIcon } from "./assets/images/profile-icon.svg";
 import { ReactComponent as SettingsIcon } from "./assets/images/settings-icon.svg";
-import { ReactComponenet as DataIcon } from "./assets/images/data-icon.svg";
+import { ReactComponent as DataIcon } from "./assets/images/data-icon.svg";
 
 import { GiSocks } from "react-icons/gi";
 
 import "./assets/css/App.css";
+import SkeletonLoader from "./components/skeleton-loader";
 import SearchBar from "./components/search-bar";
 import {
   FileType,
@@ -478,6 +479,26 @@ export default class App extends React.Component<{}, AppState> {
   render() {
     return (
       <div>
+        {/* Changed!! Added Nav */}
+        <div className="fixed h-screen w-[100px] bg-[#e5e5e5] flex flex-col items-center px-[20px] py-[40px] gap-[40px] z-10">
+          <button onClick={this.goHomePage} className="cursor-pointer">
+            <img
+              src={PreceptLogo}
+              alt="Precept Logo"
+              className="w-[48px] h-auto cursor-pointer"
+            />
+          </button>
+          <button onClick={this.goHomePage} className="cursor-pointer">
+            <SearchIcon />
+          </button>
+          <button onClick={this.openModal} className="cursor-pointer">
+            <DataIcon />
+          </button>
+          <button onClick={this.goHomePage} className="cursor-pointer">
+            <ProfileIcon />
+          </button>
+        </div>
+
         <Tooltip id="my-tooltip" style={{ fontSize: "18px" }} />
         {/* <ToastContainer className="z-50" theme="colored" /> */}
         {/* <a
@@ -786,7 +807,7 @@ export default class App extends React.Component<{}, AppState> {
           {/* results page */}
           {this.state.showResultsPage && (
             <div className="relative flex flex-row w-full">
-              <div className="fixed h-screen w-[100px] bg-[#e5e5e5] flex flex-col items-center px-[20px] py-[40px] gap-[40px]">
+              {/* <div className="fixed h-screen w-[100px] bg-[#e5e5e5] flex flex-col items-center px-[20px] py-[40px] gap-[40px]">
                 <button onClick={this.goHomePage} className="cursor-pointer">
                   <img
                     src={PreceptLogo}
@@ -803,7 +824,7 @@ export default class App extends React.Component<{}, AppState> {
                 <button onClick={this.goHomePage} className="cursor-pointer">
                   <ProfileIcon />
                 </button>
-              </div>
+              </div> */}
 
               {/* <span className="flex flex-row items-start text-3xl text-center text-white m-10 mx-7 mt-0">
                 <span className="text-[#0D7E97]	block font-dm-sans md:leading-normal bg-clip-text bg-gradient-to-l">
@@ -824,6 +845,12 @@ export default class App extends React.Component<{}, AppState> {
                     showSuggestions={true}
                   />
                 </div>
+                {this.state.isLoading && (
+                  <div className="w-full flex flex-col gap-[20px] px-[20px] py-[80px]">
+                    <SkeletonLoader />
+                    <SkeletonLoader />
+                  </div>
+                )}
                 {!this.state.isLoading && (
                   <span className="text-[#D2D2D2] font-dm-sans font-medium text-base leading-[22px] mt-3">
                     {this.state.results.length} Results (
@@ -831,7 +858,7 @@ export default class App extends React.Component<{}, AppState> {
                   </span>
                 )}
                 {this.state.dataSourceTypes.length > 0 && (
-                  <div className=" w-full flex flex-col gap-[20px] px-[20px] py-[40px]">
+                  <div className="w-full flex flex-col gap-[20px] px-[20px] py-[40px]">
                     {this.bundleSearchResults(this.state.results).map(
                       (result, index) => {
                         return (
