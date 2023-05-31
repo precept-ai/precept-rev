@@ -447,29 +447,36 @@ export default class App extends React.Component<{}, AppState> {
   bundleSearchResults = (results: SearchResultDetails[]) => {
     const newArray: SearchResultDetails[] = [];
     for (const result of results) {
-      const found = newArray.find((inspectedResult) => {
-        if (
-          inspectedResult.title === result.title &&
-          inspectedResult.type === result.type &&
-          inspectedResult.author === result.author &&
-          inspectedResult.time === result.time &&
-          inspectedResult.data_source === result.data_source
-        ) {
-          return true;
-        } else {
-          return false;
-        }
-      });
+      // Only bundle together if the data source is GDrive
+      if (result.data_source === "google_drive") {
+        const found = newArray.find((inspectedResult) => {
+          if (
+            inspectedResult.title === result.title &&
+            inspectedResult.type === result.type &&
+            inspectedResult.author === result.author &&
+            inspectedResult.time === result.time &&
+            inspectedResult.data_source === result.data_source
+          ) {
+            return true;
+          } else {
+            return false;
+          }
+        });
 
-      if (found) {
-        const index = newArray.indexOf(found);
-        const newItem = {
-          ...found,
-          content: [...found.content, ...result.content],
-          score: found.score > result.score ? found.score : result.score,
-        };
-        newArray.splice(index, 1, newItem);
-      } else {
+        if (found) {
+          const index = newArray.indexOf(found);
+          const newItem = {
+            ...found,
+            content: [...found.content, ...result.content],
+            score: found.score > result.score ? found.score : result.score,
+          };
+          newArray.splice(index, 1, newItem);
+        } else {
+          newArray.push(result);
+        }
+      }
+      // Otherwise, it is not from GDrive, so we just push it to the result array
+      else {
         newArray.push(result);
       }
     }

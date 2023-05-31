@@ -32,22 +32,28 @@ export const ResultModal = (props: ResultModalProps) => {
               {props.result.title}
             </h2>
             <div className="w-full h-full overflow-auto">
-              <span
-                className={
-                  (props.result.content[0].bold ? "font-bold text-black" : "") +
-                  " text-md font-dm-sans font-regular"
-                }
-              >
-                {props.result.content[0].content}
-              </span>
-              <span
-                className={
-                  (props.result.content[1].bold ? "font-bold text-black" : "") +
-                  " text-md font-dm-sans font-regular"
-                }
-              >
-                {props.result.content[1].content}
-              </span>
+              {props.result.content[0] && (
+                <span
+                  className={
+                    (props.result.content[0].bold
+                      ? "font-bold text-black"
+                      : "") + " text-md font-dm-sans font-regular"
+                  }
+                >
+                  {props.result.content[0].content}
+                </span>
+              )}
+              {props.result.content[1] && (
+                <span
+                  className={
+                    (props.result.content[1].bold
+                      ? "font-bold text-black"
+                      : "") + " text-md font-dm-sans font-regular"
+                  }
+                >
+                  {props.result.content[1].content}
+                </span>
+              )}
               {/* {convertToGroupsOfTwo(props.result.content).map(
                 (groupOfTwo, index) => (
                   <div>
@@ -94,13 +100,16 @@ export const ResultModal = (props: ResultModalProps) => {
             &times;
           </button>
         </div>
-        <iframe
-          className="w-full h-full"
-          src={getPreviewUrl(props.result)}
-          allow="autoplay"
-          allowFullScreen={true}
-          title="Document Preview"
-        />
+
+        {props.result.data_source === "google_drive" && (
+          <iframe
+            className="w-full h-full"
+            src={getPreviewUrl(props.result)}
+            allow="autoplay"
+            allowFullScreen={true}
+            title="Document Preview"
+          />
+        )}
       </div>
     </div>
   );
