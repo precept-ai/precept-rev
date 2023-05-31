@@ -853,8 +853,11 @@ export default class App extends React.Component<{}, AppState> {
                 )}
                 {!this.state.isLoading && (
                   <span className="text-[#D2D2D2] font-dm-sans font-medium text-base leading-[22px] mt-3">
-                    {this.state.results.length} Results (
-                    {this.state.searchDuration} seconds)
+                    {this.bundleSearchResults(this.state.results).length}{" "}
+                    {this.bundleSearchResults(this.state.results).length > 1
+                      ? "Results"
+                      : "Result"}{" "}
+                    ({this.state.searchDuration} seconds)
                   </span>
                 )}
                 {this.state.dataSourceTypes.length > 0 && (
