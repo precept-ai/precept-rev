@@ -5,9 +5,9 @@ module.exports = {
     extend: {
       fontFamily: {
         "dm-sans": ["DM Sans"],
-        poppins: ["Poppins"],
-        "source-sans-pro": ["Source Sans Pro"],
-        inter: ["Inter", "sans-serif"],
+        poppins: ["DM Sans"],
+        "source-sans-pro": ["DM Sans"],
+        inter: ["DM Sans", "sans-serif"],
       },
     },
   },
