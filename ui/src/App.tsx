@@ -59,7 +59,7 @@ export interface AppState {
   isStartedFetching: boolean;
   isPreparingIndexing: boolean;
   isIndexing: boolean;
-  didPassDiscord: boolean;
+  // didPassDiscord: boolean;
   discordCodeInput: string;
   docsLeftToIndex: number;
   docsInIndexing: number;
@@ -159,7 +159,7 @@ export default class App extends React.Component<{}, AppState> {
       isStartedFetching: false,
       isPreparingIndexing: false,
       discordCodeInput: "",
-      didPassDiscord: false,
+      // didPassDiscord: false,
       docsLeftToIndex: 0,
       docsInIndexing: 0,
       docsIndexed: 0,
@@ -187,9 +187,9 @@ export default class App extends React.Component<{}, AppState> {
     }
     posthog.identify(localStorage.getItem("uuid")!);
 
-    if (localStorage.getItem("discord_key") != null) {
-      this.setState({ didPassDiscord: true });
-    }
+    // if (localStorage.getItem("discord_key") != null) {
+    //   this.setState({ didPassDiscord: true });
+    // }
 
     if (!this.state.isStartedFetching) {
       this.fetchStatsusForever();
@@ -355,10 +355,10 @@ export default class App extends React.Component<{}, AppState> {
   }
 
   openModal() {
-    if (this.state.didPassDiscord) {
-      this.setState({ isModalOpen: true });
-    } else {
-    }
+    // if (this.state.didPassDiscord) {
+    this.setState({ isModalOpen: true });
+    // } else {
+    // }
   }
 
   afterOpenModal() {
@@ -385,24 +385,24 @@ export default class App extends React.Component<{}, AppState> {
     return " text-[#A78BF6]";
   }
 
-  hideDiscord = () => {
-    this.setState({ didPassDiscord: true });
-  };
+  // hideDiscord = () => {
+  //   this.setState({ didPassDiscord: true });
+  // };
 
-  saveDiscordPassed = (joined: boolean) => {
-    localStorage.setItem("discord_key", "true");
-    this.setState({ didPassDiscord: true });
-    if (joined) {
-      posthog.capture("passed_discord", { name: "joined" });
-      toast.success("Welcome to the community!", { autoClose: 2000 });
-    } else {
-      posthog.capture("passed_discord", { name: "skipped" });
-      toast.success(
-        "Welcome! use top-left discord icon to join the community.",
-        { autoClose: 8000 }
-      );
-    }
-  };
+  // saveDiscordPassed = (joined: boolean) => {
+  //   localStorage.setItem("discord_key", "true");
+  //   this.setState({ didPassDiscord: true });
+  //   if (joined) {
+  //     posthog.capture("passed_discord", { name: "joined" });
+  //     toast.success("Welcome to the community!", { autoClose: 2000 });
+  //   } else {
+  //     posthog.capture("passed_discord", { name: "skipped" });
+  //     toast.success(
+  //       "Welcome! use top-left discord icon to join the community.",
+  //       { autoClose: 8000 }
+  //     );
+  //   }
+  // };
 
   dataSourcesAdded = (newlyConnected: ConnectedDataSource) => {
     posthog.capture("added", { name: newlyConnected.name });
@@ -584,8 +584,8 @@ export default class App extends React.Component<{}, AppState> {
         {
           /* Go add some data sources ->*/
           this.state.didListedConnectedDataSources &&
-            this.state.connectedDataSources.length === 0 &&
-            this.state.didPassDiscord && (
+            this.state.connectedDataSources.length === 0 && (
+              // this.state.didPassDiscord &&
               <div className="absolute mx-auto left-0 right-0 w-fit z-20 top-6">
                 <div className="text-xs bg-[#0D7E97] border-[#a61616] border-[.8px] rounded-full inline-block px-3 py-1">
                   <div className="text-[#fff] font-medium font-dm-sans text-sm flex flex-row justify-center items-center">
