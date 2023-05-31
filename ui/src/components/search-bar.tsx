@@ -46,9 +46,9 @@ export default class SearchBar extends React.Component<
     return (
       <div
         style={{ width: `${this.props.widthPercentage}%` }}
-        className={`h-[49.5px] rounded-[30px] bg-[#fff] ${this.getBorderGradient()}`}
+        className={`h-[49.5px] rounded-[30px] bg-[#fff] ${this.getBorderGradient()} font-dm-sans`}
       >
-        <div className="flex h-12 w-full items-center container text-3xl rounded-[30px] bg-[#fff] text-[#C9C9C9]">
+        <div className="flex h-12 w-full items-center container text-3xl rounded-[30px] bg-[#fff] text-[#C9C9C9] font-dm-sans">
           <button
             onClick={this.search}
             className="mx-2 text-white p-2 rounded
