@@ -189,7 +189,7 @@ export default class DataSourcePanel extends React.Component<
                 <FaRegEdit
                   key="pencil"
                   onClick={this.swithcMode}
-                  className="text-black mt-1 float-right inline hover:text-[#9875d4] hover:cursor-pointer"
+                  className="text-black mt-1 float-right inline hover:text-[#0D7E97] hover:cursor-pointer"
                 />
               )}
             </h1>
@@ -197,7 +197,7 @@ export default class DataSourcePanel extends React.Component<
               {this.props.connectedDataSources.map((dataSource, index) => {
                 return (
                   // connected data source
-                  <div className="flex py-2 pl-5 pr-3 m-2 flex-row items-center justify-center bg-[#0D7E97] hover:shadow-inner shadow-blue-500/50 rounded-lg font-dm-sans leading-[28px] border-b-[#916CCD] border-b-2">
+                  <div className="flex py-2 pl-5 pr-3 m-2 flex-row items-center justify-center bg-[#0D7E97] hover:shadow-inner shadow-blue-500/50 rounded-lg font-dm-sans leading-[28px] border-b-[#000] border-b-2">
                     <img
                       alt="data-source"
                       className={"mr-2 h-[20px]"}
