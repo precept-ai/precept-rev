@@ -522,7 +522,7 @@ export default class App extends React.Component<{}, AppState> {
             className="absolute left-0 z-30 h-7 hover:fill-[#a7a1fe] fill-[#8983e0] float-left ml-6 mt-6 text-[42px] hover:cursor-pointer transition-all duration-300 hover:drop-shadow-2xl"
           ></img>
         </a> */}
-        <span
+        {/* <span
           className={
             "absolute right-0 z-30 float-right mr-6 mt-6 flex flex-row " +
             (this.state.languageOpen ? "items-start" : "items-center")
@@ -536,8 +536,8 @@ export default class App extends React.Component<{}, AppState> {
               className="flex justify-between flex-row items-center px-2 rounded-xl
               hover:cursor-pointer hover:drop-shadow-2xl transition-all duration-100 hover:bg-[rgba(13, 126, 151, 0.8)] hover:border-[#787099]"
             >
-              {/* <a className="text-xl text-white mr-2">EN</a> */}
-              {/* <img src={UsaImage} className="h-8 text-[42px] grayscale-[0.5]"/> */}
+              <a className="text-xl text-white mr-2">EN</a>
+              <img src={UsaImage} className="h-8 text-[42px] grayscale-[0.5]"/> 
               <span className="text-[20px] text-white">
                 🇺🇸 {this.state.languageOpen ? "EN" : ""}
               </span>
@@ -567,12 +567,13 @@ export default class App extends React.Component<{}, AppState> {
             )}
           </span>
 
-          {/* <FiSettings
+          <FiSettings
             onClick={this.openModal}
             stroke={"#0D7E97"}
             className="mr-2 text-[42px] hover:cursor-pointer hover:rotate-90 transition-all duration-300 hover:drop-shadow-2xl"
-          ></FiSettings> */}
-        </span>
+          ></FiSettings>
+        </span> */}
+
         {this.inIndexing() && (
           <div className="absolute mx-auto left-0 right-0 w-fit z-20 top-6">
             <div className="text-xs bg-[#0D7E97] border-[#4F4F4F] border-[.8px] rounded-full inline-block px-3 py-1">
