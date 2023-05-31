@@ -740,11 +740,11 @@ export default class App extends React.Component<{}, AppState> {
         )}
         <div
           className={
-            "w-[100vw] z-10 filter min-h-screen" +
+            "w-[100vw] z-10 filter min-h-screen " +
             (this.state.isModalOpen ||
             (this.state.didListedConnectedDataSources &&
               this.state.connectedDataSources.length === 0)
-              ? " filter blur-sm"
+              ? "filter blur-sm"
               : "") +
             (this.state.showResultsPage ? "bg-white" : "")
           }
@@ -814,7 +814,7 @@ export default class App extends React.Component<{}, AppState> {
 
           {/* results page */}
           {this.state.showResultsPage && (
-            <div className="relative flex flex-row w-full">
+            <div className="relative flex flex-row w-full bg-white min-h-full">
               {/* <div className="fixed h-screen w-[100px] bg-[#e5e5e5] flex flex-col items-center px-[20px] py-[40px] gap-[40px]">
                 <button onClick={this.goHomePage} className="cursor-pointer">
                   <img
