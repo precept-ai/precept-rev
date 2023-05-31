@@ -72,7 +72,7 @@ export const SearchResult = (props: SearchResultProps) => {
       }
     >
       {props.resultDetails.type !== ResultType.Comment && (
-        <span className="relative text-sm float-right text-[#000] right-2 top-2">
+        <span className="relative text-sm font-dm-sans float-right text-[#000] right-2 top-2">
           {props.resultDetails.score.toFixed(2)}%
         </span>
       )}
@@ -99,12 +99,12 @@ export const SearchResult = (props: SearchResultProps) => {
               {props.resultDetails.title}
             </a>
             {props.resultDetails.type === ResultType.Comment && (
-              <span className="flex flex-row items-center justify-center ml-2 mt-[5px]">
+              <span className="flex flex-row items-center justify-center ml-2 mt-[5px] font-dm-sans">
                 Commented {getDaysAgo(props.resultDetails.time)}
               </span>
             )}
             {props.resultDetails.type === ResultType.Message && (
-              <span className="flex flex-row items-center justify-center ml-2 mt-[5px]">
+              <span className="flex flex-row items-center justify-center ml-2 mt-[5px] font-dm-sans">
                 Sent {getDaysAgo(props.resultDetails.time)}
               </span>
             )}
@@ -118,7 +118,7 @@ export const SearchResult = (props: SearchResultProps) => {
                 {isClosedStatus(props) && (
                   <span className="flex flex-row items-center">
                     <MdVerified className="h-[16px] fill-[#79bd68]"></MdVerified>
-                    <span className="ml-1 overflow-hidden overflow-ellipsis whitespace-nowrap text-[#79bd68]">
+                    <span className="ml-1 overflow-hidden overflow-ellipsis whitespace-nowrap text-[#79bd68] font-dm-sans">
                       {capitilize(props.resultDetails.status)}
                     </span>
                   </span>
@@ -127,7 +127,7 @@ export const SearchResult = (props: SearchResultProps) => {
                   <GoAlert className="h-[14px] fill-[#ff9f2b]"></GoAlert>
                 )}
                 {!isClosedStatus(props) && (
-                  <span className="ml-1 overflow-hidden overflow-ellipsis whitespace-nowrap">
+                  <span className="ml-1 overflow-hidden overflow-ellipsis whitespace-nowrap font-dm-sans">
                     {capitilize(props.resultDetails.status)}
                   </span>
                 )}
@@ -153,14 +153,14 @@ export const SearchResult = (props: SearchResultProps) => {
                 {props.resultDetails.type === ResultType.Issue && (
                   <RiGitRepositoryLine className="h-[14px] mt-[1px] mr-[2px]"></RiGitRepositoryLine>
                 )}
-                <span className="text-[15x]">
+                <span className="text-[15x] font-dm-sans">
                   {props.resultDetails.type === ResultType.Docment && " / "}
                   {props.resultDetails.type === ResultType.Message && "#"}
                   {props.resultDetails.location}{" "}
                 </span>
               </span>
               {props.resultDetails.type !== ResultType.Message && (
-                <span className="ml-1 flex flex-row items-center">
+                <span className="ml-1 flex flex-row items-center font-dm-sans">
                   <Img
                     alt="author"
                     className="inline-block ml-[6px] mr-2 h-4 rounded-xl"
@@ -170,7 +170,7 @@ export const SearchResult = (props: SearchResultProps) => {
                       DefaultUserImage,
                     ]}
                   ></Img>
-                  <span className="capitalize">
+                  <span className="capitalize font-dm-sans">
                     {props.resultDetails.author}{" "}
                   </span>
                 </span>
@@ -185,7 +185,7 @@ export const SearchResult = (props: SearchResultProps) => {
                   className="inline ml-2 mx-1  h-[12px] w-[12px] grayscale-[0.55]"
                   src={props.dataSourceType.image_base64}
                 ></img>
-                <span className="ml-[2px] ">
+                <span className="ml-[2px] font-dm-sans">
                   {props.dataSourceType.display_name}
                 </span>
               </span>
