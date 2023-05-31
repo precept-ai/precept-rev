@@ -193,7 +193,7 @@ export const SearchResult = (props: SearchResultProps) => {
           )}
           {
             <span>
-              {props.resultDetails.content.map((text_part, index) => {
+              {/* {props.resultDetails.content.map((text_part, index) => {
                 return (
                   <>
                     <span
@@ -209,7 +209,27 @@ export const SearchResult = (props: SearchResultProps) => {
                     <br />
                   </>
                 );
-              })}
+              })} */}
+              <span
+                style={{ wordBreak: "break-word" }}
+                className={
+                  (props.resultDetails.content[0].bold
+                    ? "font-bold text-black"
+                    : "") + " text-md font-dm-sans font-medium"
+                }
+              >
+                {props.resultDetails.content[0].content}
+              </span>
+              <span
+                style={{ wordBreak: "break-word" }}
+                className={
+                  (props.resultDetails.content[1].bold
+                    ? "font-bold text-black"
+                    : "") + " text-md font-dm-sans font-medium"
+                }
+              >
+                {props.resultDetails.content[1].content}
+              </span>
             </span>
           }
         </p>

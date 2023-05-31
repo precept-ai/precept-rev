@@ -9,6 +9,9 @@ import DiscordImage from "./assets/images/discord.png";
 
 import PreceptLogo from "./assets/images/precept-logo.png";
 import GoogleDrivePng from "./assets/images/Drive-png.png";
+import { ReactComponent as SearchIcon } from "./assets/images/search-icon.svg";
+import { ReactComponent as ProfileIcon } from "./assets/images/profile-icon.svg";
+import { ReactComponent as SettingsIcon } from "./assets/images/settings-icon.svg";
 
 import { GiSocks } from "react-icons/gi";
 
@@ -109,7 +112,7 @@ export default class App extends React.Component<{}, AppState> {
     super({});
     this.state = {
       query: "",
-      results: [], //dummyResults,
+      results: [], // CHANGED!!
       dataSourceTypes: [],
       // [
       //   {
@@ -131,7 +134,7 @@ export default class App extends React.Component<{}, AppState> {
       dataSourceTypesDict: {},
       // {
       //   drive: {
-      //     name: "drive",
+      //     name: "google_drive",
       //     display_name: "Google Drive",
       //     config_fields: [
       //       {
@@ -438,6 +441,39 @@ export default class App extends React.Component<{}, AppState> {
     this.setState({ showResultModal: false, aciveResult: null });
   };
 
+  // CHANGED - ADDED !!
+  bundleSearchResults = (results: SearchResultDetails[]) => {
+    const newArray: SearchResultDetails[] = [];
+    for (const result of results) {
+      const found = newArray.find((inspectedResult) => {
+        if (
+          inspectedResult.title === result.title &&
+          inspectedResult.type === result.type &&
+          inspectedResult.author === result.author &&
+          inspectedResult.time === result.time &&
+          inspectedResult.data_source === result.data_source
+        ) {
+          return true;
+        } else {
+          return false;
+        }
+      });
+
+      if (found) {
+        const index = newArray.indexOf(found);
+        const newItem = {
+          ...found,
+          content: [...found.content, ...result.content],
+          score: found.score > result.score ? found.score : result.score,
+        };
+        newArray.splice(index, 1, newItem);
+      } else {
+        newArray.push(result);
+      }
+    }
+    return newArray;
+  };
+
   render() {
     return (
       <div>
@@ -511,7 +547,7 @@ export default class App extends React.Component<{}, AppState> {
         {this.inIndexing() && (
           <div className="absolute mx-auto left-0 right-0 w-fit z-20 top-6">
             <div className="text-xs bg-[#191919] border-[#4F4F4F] border-[.8px] rounded-full inline-block px-3 py-1">
-              <div className="text-[#E4E4E4] font-medium font-inter text-sm flex flex-row justify-center items-center">
+              <div className="text-[#E4E4E4] font-medium font-dm-sans text-sm flex flex-row justify-center items-center">
                 <ClipLoader
                   color="#ffffff"
                   loading={true}
@@ -530,7 +566,7 @@ export default class App extends React.Component<{}, AppState> {
             this.state.didPassDiscord && (
               <div className="absolute mx-auto left-0 right-0 w-fit z-20 top-6">
                 <div className="text-xs bg-[#100101] border-[#a61616] border-[.8px] rounded-full inline-block px-3 py-1">
-                  <div className="text-[#E4E4E4] font-medium font-inter text-sm flex flex-row justify-center items-center">
+                  <div className="text-[#E4E4E4] font-medium font-dm-sans text-sm flex flex-row justify-center items-center">
                     <AiFillWarning color="red" size={20} />
                     <span className="ml-2">No sources added. </span>
                     <button
@@ -583,7 +619,7 @@ export default class App extends React.Component<{}, AppState> {
                         className="inline-flex transition duration-150 ease-in-out group ml-1 hover:cursor-pointer"
                       >
                         Join Discord
-                        <span className="font-inter tracking-normal font-semibold group-hover:translate-x-0.5 transition-transform duration-150 ease-in-out ml-1">
+                        <span className="font-dm-sans tracking-normal font-semibold group-hover:translate-x-0.5 transition-transform duration-150 ease-in-out ml-1">
                           -&gt;
                         </span>
                       </a>
@@ -596,7 +632,7 @@ export default class App extends React.Component<{}, AppState> {
                   onClick={() => {
                     this.saveDiscordPassed(false);
                   }}
-                  className="font-inter bg-[#4f545d] hover:bg-[#3a3e45] rounded h-12 p-2 text-white w-40"
+                  className="font-dm-sans bg-[#4f545d] hover:bg-[#3a3e45] rounded h-12 p-2 text-white w-40"
                 >
                   Hide forever
                 </button>
@@ -608,11 +644,11 @@ export default class App extends React.Component<{}, AppState> {
                   href="https://discord.gg/aMRRcmhAdW"
                   target="_blank"
                   rel="noreferrer"
-                  className="flex hover:bg-[#404ab3] justify-center items-center font-inter bg-[#5865F2] rounded h-12 p-2 text-white w-40 
+                  className="flex hover:bg-[#404ab3] justify-center items-center font-dm-sans bg-[#5865F2] rounded h-12 p-2 text-white w-40 
                     inline-flex transition duration-150 ease-in-out group ml-1 hover:cursor-pointer"
                 >
                   Join Discord
-                  <span className="font-inter tracking-normal font-semibold group-hover:translate-x-0.5 transition-transform duration-150 ease-in-out ml-1">
+                  <span className="font-dm-sans tracking-normal font-semibold group-hover:translate-x-0.5 transition-transform duration-150 ease-in-out ml-1">
                     -&gt;
                   </span>
                 </a>
@@ -675,12 +711,13 @@ export default class App extends React.Component<{}, AppState> {
         )}
         <div
           className={
-            "w-[98vw] z-10 filter" +
+            "w-[100vw] z-10 filter min-h-screen" +
             (this.state.isModalOpen ||
             (this.state.didListedConnectedDataSources &&
               this.state.connectedDataSources.length === 0)
               ? " filter blur-sm"
-              : "")
+              : "") +
+            (this.state.showResultsPage ? "bg-white" : "")
           }
         >
           <Modal
@@ -748,24 +785,45 @@ export default class App extends React.Component<{}, AppState> {
 
           {/* results page */}
           {this.state.showResultsPage && (
-            <div className="relative flex flex-row top-20 left-5 w-full">
+            <div className="relative flex flex-row w-full">
+              <div className="fixed h-screen w-[100px] bg-[#e5e5e5] flex flex-col items-center px-[20px] py-[40px] gap-[40px]">
+                <button onClick={this.goHomePage} className="cursor-pointer">
+                  <img
+                    src={PreceptLogo}
+                    alt="Precept Logo"
+                    className="w-full h-auto"
+                  />
+                </button>
+                <button
+                  onClick={this.goHomePage}
+                  className="cursor-pointer w-[40px]"
+                >
+                  <SearchIcon />
+                </button>
+                <button onClick={this.goHomePage} className="cursor-pointer">
+                  <ProfileIcon />
+                </button>
+              </div>
+
               {/* <span className="flex flex-row items-start text-3xl text-center text-white m-10 mx-7 mt-0">
                 <span className="text-[#0D7E97]	block font-dm-sans md:leading-normal bg-clip-text bg-gradient-to-l">
                   Precept
                 </span>
               </span> */}
-              <div className="flex flex-col items-center w-full">
-                <SearchBar
-                  widthPercentage={40}
-                  isDisabled={this.state.isServerDown}
-                  query={this.state.query}
-                  isLoading={this.state.isLoading}
-                  showReset={this.state.results.length > 0}
-                  onSearch={this.goSearchPage}
-                  onQueryChange={this.handleQueryChange}
-                  onClear={this.clear}
-                  showSuggestions={true}
-                />
+              <div className="flex flex-col items-center w-full ml-[100px]">
+                <div className="w-full flex justify-center items-center py-[20px] bg-[rgba(0,0,0,0.04)] shadow-[0_2px_8px_rgba(0,0,0,0.12)]">
+                  <SearchBar
+                    widthPercentage={40}
+                    isDisabled={this.state.isServerDown}
+                    query={this.state.query}
+                    isLoading={this.state.isLoading}
+                    showReset={this.state.results.length > 0}
+                    onSearch={this.goSearchPage}
+                    onQueryChange={this.handleQueryChange}
+                    onClear={this.clear}
+                    showSuggestions={true}
+                  />
+                </div>
                 {!this.state.isLoading && (
                   <span className="text-[#D2D2D2] font-dm-sans font-medium text-base leading-[22px] mt-3">
                     {this.state.results.length} Results (
@@ -773,20 +831,22 @@ export default class App extends React.Component<{}, AppState> {
                   </span>
                 )}
                 {this.state.dataSourceTypes.length > 0 && (
-                  <div className="w-[100vw] 2xl:w-10/12 flex flex-col gap-[20px] p-[10px]">
-                    {this.state.results.map((result, index) => {
-                      return (
-                        <SearchResult
-                          key={index}
-                          resultDetails={result}
-                          dataSourceType={
-                            this.state.dataSourceTypesDict[result.data_source]
-                          }
-                          openModal={this.openResultModal}
-                          closeModal={this.closeResultModal}
-                        />
-                      );
-                    })}
+                  <div className=" w-full flex flex-col gap-[20px] px-[20px] py-[40px]">
+                    {this.bundleSearchResults(this.state.results).map(
+                      (result, index) => {
+                        return (
+                          <SearchResult
+                            key={index}
+                            resultDetails={result}
+                            dataSourceType={
+                              this.state.dataSourceTypesDict[result.data_source]
+                            }
+                            openModal={this.openResultModal}
+                            closeModal={this.closeResultModal}
+                          />
+                        );
+                      }
+                    )}
                   </div>
                 )}
                 {this.state.showResultModal && this.state.aciveResult && (
@@ -831,6 +891,11 @@ export default class App extends React.Component<{}, AppState> {
       return;
     }
     window.location.replace(`/search?query=${this.state.query}`);
+  };
+
+  goHomePage = () => {
+    this.setState({ query: "" });
+    window.location.replace(`/`);
   };
 
   search = (query?: string) => {
@@ -885,7 +950,7 @@ export default class App extends React.Component<{}, AppState> {
   };
 }
 
-// CHANGED - CREATED DUMMY RESULTS !!
+// // CHANGED - CREATED DUMMY RESULTS !!
 // const dummyResults: SearchResultDetails[] = [
 //   {
 //     type: ResultType.Docment,
@@ -914,7 +979,65 @@ export default class App extends React.Component<{}, AppState> {
 //     file_type: FileType.Pdf,
 //     status: "active",
 //     is_active: true,
-//     url: "https://docs.google.com/presentation/d/19DfFOZqf2MfB73CeqPEXUKnjTyMi0jmhw4pGYG525gg/edit?usp=sharing#slide=id.p30",
+//     url: "https://drive.google.com/file/d/16uQAKPY1R7yxPoFeS6Tpv1vurcVOhMUt/view?usp=share_link",
+//     child: null,
+//   },
+//   {
+//     type: ResultType.Docment,
+//     data_source: "drive",
+//     title: "Strategic Board Review Session 18.09.2022",
+//     author: "Rayhan Beebeejaun",
+//     author_image_url:
+//       "https://media.licdn.com/dms/image/D4E03AQGifA_PF339bA/profile-displayphoto-shrink_800_800/0/1666193151320?e=1690416000&v=beta&t=tNJunUyqBrg8eCMAHsi2C5y2cCOuuLTfs_O7K5m0V64",
+//     author_image_data: "Dummy data",
+//     time: new Date().toString(),
+//     content: [
+//       {
+//         content: "Another match",
+//         bold: true,
+//       },
+//       {
+//         content:
+//           "Another text similarity match to test bundling results from the same document together",
+//         bold: false,
+//       },
+//     ],
+//     score: 99,
+//     location: "Dummy location",
+//     platform: "Drive",
+//     file_type: FileType.Pdf,
+//     status: "active",
+//     is_active: true,
+//     url: "https://drive.google.com/file/d/16uQAKPY1R7yxPoFeS6Tpv1vurcVOhMUt/view?usp=share_link",
+//     child: null,
+//   },
+//   {
+//     type: ResultType.Docment,
+//     data_source: "drive",
+//     title: "Strategic Board Review Session 18.09.2022",
+//     author: "Rayhan Beebeejaun",
+//     author_image_url:
+//       "https://media.licdn.com/dms/image/D4E03AQGifA_PF339bA/profile-displayphoto-shrink_800_800/0/1666193151320?e=1690416000&v=beta&t=tNJunUyqBrg8eCMAHsi2C5y2cCOuuLTfs_O7K5m0V64",
+//     author_image_data: "Dummy data",
+//     time: new Date().toString(),
+//     content: [
+//       {
+//         content: "An additional match",
+//         bold: true,
+//       },
+//       {
+//         content:
+//           "Another text similarity match to test bundling results from the same document together",
+//         bold: false,
+//       },
+//     ],
+//     score: 99,
+//     location: "Dummy location",
+//     platform: "Drive",
+//     file_type: FileType.Pdf,
+//     status: "active",
+//     is_active: true,
+//     url: "https://drive.google.com/file/d/16uQAKPY1R7yxPoFeS6Tpv1vurcVOhMUt/view?usp=share_link",
 //     child: null,
 //   },
 //   {
@@ -941,7 +1064,7 @@ export default class App extends React.Component<{}, AppState> {
 //     score: 80,
 //     location: "Dummy location 2",
 //     platform: "Drive",
-//     file_type: FileType.Pdf,
+//     file_type: FileType.Pptx,
 //     status: "active",
 //     is_active: true,
 //     url: "https://docs.google.com/presentation/d/1r8CvG22D2-9seHh5bzTp2Ks6z77ZVCms/edit#slide=id.p1",

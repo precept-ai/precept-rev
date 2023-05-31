@@ -56,7 +56,7 @@ export default class SearchBar extends React.Component<
           >
             {this.props.isLoading ? (
               <ClipLoader
-                color="#ffffff"
+                color="#0D7E97"
                 loading={this.props.isLoading}
                 size={25}
                 aria-label="Loading Spinner"
@@ -108,7 +108,7 @@ export default class SearchBar extends React.Component<
                 );
               })}
               {this.state.suggestions.length > 1 && (
-                <div className="relative right-0 text-right mr-4 text-white text-xs">
+                <div className="relative right-0 text-right mr-4 text-black text-xs">
                   Use arrows ↑ ↓ to navigate
                 </div>
               )}
