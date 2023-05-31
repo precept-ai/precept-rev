@@ -17,7 +17,7 @@ export const ResultModal = (props: ResultModalProps) => {
         onClick={props.closeModal}
       ></div>
       <div
-        className="w-4/5 h-[85vh] flex flex-col justify-center items-center p-[20px] z-20 bg-[#fff] rounded-[10px]"
+        className="w-4/5 h-[85vh] flex flex-col justify-center items-center p-[20px] gap-[0px] z-20 bg-[#fff] rounded-[10px]"
         onClick={() => {}}
       >
         <div className="w-full flex flex-row items-start p-[10px] gap-[20px]">
