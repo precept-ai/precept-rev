@@ -12,6 +12,7 @@ import GoogleDrivePng from "./assets/images/Drive-png.png";
 import { ReactComponent as SearchIcon } from "./assets/images/search-icon.svg";
 import { ReactComponent as ProfileIcon } from "./assets/images/profile-icon.svg";
 import { ReactComponent as SettingsIcon } from "./assets/images/settings-icon.svg";
+import { ReactComponenet as DataIcon } from "./assets/images/data-icon.svg";
 
 import { GiSocks } from "react-icons/gi";
 
@@ -538,11 +539,11 @@ export default class App extends React.Component<{}, AppState> {
             )}
           </span>
 
-          <FiSettings
+          {/* <FiSettings
             onClick={this.openModal}
             stroke={"#0D7E97"}
             className="mr-2 text-[42px] hover:cursor-pointer hover:rotate-90 transition-all duration-300 hover:drop-shadow-2xl"
-          ></FiSettings>
+          ></FiSettings> */}
         </span>
         {this.inIndexing() && (
           <div className="absolute mx-auto left-0 right-0 w-fit z-20 top-6">
@@ -790,14 +791,14 @@ export default class App extends React.Component<{}, AppState> {
                   <img
                     src={PreceptLogo}
                     alt="Precept Logo"
-                    className="w-full h-auto"
+                    className="w-[48px] h-auto"
                   />
                 </button>
-                <button
-                  onClick={this.goHomePage}
-                  className="cursor-pointer w-[40px]"
-                >
+                <button onClick={this.goHomePage} className="cursor-pointer">
                   <SearchIcon />
+                </button>
+                <button onClick={this.openModal} className="cursor-pointer">
+                  <DataIcon />
                 </button>
                 <button onClick={this.goHomePage} className="cursor-pointer">
                   <ProfileIcon />
