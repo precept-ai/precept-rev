@@ -229,7 +229,7 @@ export default class DataSourcePanel extends React.Component<
                         />
                       )
                     ) : (
-                      <AiFillCheckCircle className="ml-6 text-[#000] text-2xl" />
+                      <AiFillCheckCircle className="ml-6 text-[#fff] text-2xl" />
                     )}
                   </div>
                 );
@@ -258,7 +258,7 @@ export default class DataSourcePanel extends React.Component<
                       <h1 className="text-[#fff] font-dm-sans">
                         {dataSource.display_name}
                       </h1>
-                      <IoAddCircleOutline className="ml-6 text-black text-2xl hover:text-[#fff] hover:cursor-pointer transition duration-200 ease-in-out"></IoAddCircleOutline>
+                      <IoAddCircleOutline className="ml-6 text-[rgba(255,255,255,0.8)] text-2xl hover:text-[#fff] hover:cursor-pointer transition duration-200 ease-in-out"></IoAddCircleOutline>
                     </div>
                   );
                 }

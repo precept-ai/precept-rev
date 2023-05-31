@@ -546,7 +546,7 @@ export default class App extends React.Component<{}, AppState> {
         </span>
         {this.inIndexing() && (
           <div className="absolute mx-auto left-0 right-0 w-fit z-20 top-6">
-            <div className="text-xs bg-[#191919] border-[#4F4F4F] border-[.8px] rounded-full inline-block px-3 py-1">
+            <div className="text-xs bg-[#0D7E97] border-[#4F4F4F] border-[.8px] rounded-full inline-block px-3 py-1">
               <div className="text-[#E4E4E4] font-medium font-dm-sans text-sm flex flex-row justify-center items-center">
                 <ClipLoader
                   color="#ffffff"
@@ -565,12 +565,12 @@ export default class App extends React.Component<{}, AppState> {
             this.state.connectedDataSources.length === 0 &&
             this.state.didPassDiscord && (
               <div className="absolute mx-auto left-0 right-0 w-fit z-20 top-6">
-                <div className="text-xs bg-[#100101] border-[#a61616] border-[.8px] rounded-full inline-block px-3 py-1">
-                  <div className="text-[#E4E4E4] font-medium font-dm-sans text-sm flex flex-row justify-center items-center">
-                    <AiFillWarning color="red" size={20} />
+                <div className="text-xs bg-[#0D7E97] border-[#a61616] border-[.8px] rounded-full inline-block px-3 py-1">
+                  <div className="text-[#fff] font-medium font-dm-sans text-sm flex flex-row justify-center items-center">
+                    <AiFillWarning color="white" size={20} />
                     <span className="ml-2">No sources added. </span>
                     <button
-                      className="font-medium ml-1 text-[red] animate-pulse hover:cursor-pointer inline-flex items-center transition duration-150 ease-in-out group"
+                      className="font-medium ml-1 text-[white] animate-pulse hover:cursor-pointer inline-flex items-center transition duration-150 ease-in-out group"
                       onClick={this.openModal}
                     >
                       Go add some{" "}
@@ -659,12 +659,12 @@ export default class App extends React.Component<{}, AppState> {
         {/* Not ready yet page */}
         {this.state.showNotReady && (
           <div className="absolute z-30 flex flex-col items-center top-[200px] mx-auto w-full">
-            <div className="flex flex-col items-center w-[660px] h-[280px] bg-[#211a2e] border-[1px] border-[#3f3066] rounded-xl">
+            <div className="flex flex-col items-center w-[660px] h-[280px] bg-[#fff] border-[1px] border-[#3f3066] rounded-xl">
               <div className="flex flex-col justify-center items-center py-2">
                 <div className="ml-[614px] text-2xl text-[#4d3e88] gap-4">
                   <IoMdClose
                     onClick={() => this.setState({ showNotReady: false })}
-                    className="hover:text-[#6d59bd] hover:cursor-pointer"
+                    className="hover:text-[#0D7E97] hover:cursor-pointer"
                   />
                 </div>
                 <span className="flex flex-row text-white text-3xl font-bold m-5 mt-5 mb-1 font-sans items-center">
@@ -676,7 +676,7 @@ export default class App extends React.Component<{}, AppState> {
                   Precept won't be usefull until we finish indexing your
                   workplace.
                 </span>
-                <span className="text-[#aba2f2] text-xl mt-10 font-semibold">
+                <span className="text-[#000] text-xl mt-10 font-semibold">
                   {this.capitilize(this.state.sourceInIndexing)}
                   <span className="font-medium">
                     {" "}
@@ -700,11 +700,10 @@ export default class App extends React.Component<{}, AppState> {
                       100
                     ).toFixed(2)
                   )}
-                  bgColor={"#7d3fff"}
-                  baseBgColor={"#483982"}
+                  bgColor={"#0D7E97"}
+                  baseBgColor={"rgba(0,0,0,0.06)"}
                   className="w-[450px] mt-5"
                 />
-                ;
               </div>
             </div>
           </div>
