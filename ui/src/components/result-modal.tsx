@@ -1,6 +1,6 @@
 import React from "react";
 import { FileType, SearchResultDetails } from "./search-result";
-import { ResultType, getBigIcon } from "./search-result";
+import { ResultType, getBigIcon, TextPart } from "./search-result";
 import { DataSourceType } from "../data-source";
 
 export interface ResultModalProps {
@@ -30,18 +30,24 @@ export const ResultModal = (props: ResultModalProps) => {
           <h2 className="text-2xl text-[#0D7E97] font-bold font-dm-sans">
             {props.result.title}
           </h2>
-          <div className="w-full h-full flex flex-col items-start justify-between gap-[10px] overflow-auto">
-            {props.result.content.map((text_part, index) => (
-              <span
-                key={index}
-                className={
-                  (text_part.bold ? "font-bold text-black" : "") +
-                  " text-md font-dm-sans font-regular"
-                }
-              >
-                {text_part.content}
-              </span>
-            ))}
+          <div className="w-full h-full flex flex-col items-start gap-[10px] overflow-auto">
+            {convertToGroupsOfTwo(props.result.content).map(
+              (groupOfTwo, index) => (
+                <div>
+                  {groupOfTwo.map((text_part, index) => (
+                    <span
+                      key={index}
+                      className={
+                        (text_part.bold ? "font-bold text-black" : "") +
+                        " text-md font-dm-sans font-regular"
+                      }
+                    >
+                      {text_part.content}
+                    </span>
+                  ))}
+                </div>
+              )
+            )}
           </div>
           <div className="w-full flex flex-row items-end justify-between p-[10px] gap-[10px]">
             <a
@@ -80,6 +86,22 @@ export const ResultModal = (props: ResultModalProps) => {
       </div>
     </div>
   );
+};
+
+const convertToGroupsOfTwo = (content: TextPart[]) => {
+  let groupsOfTwo: TextPart[][] = [];
+  let currentGroup: TextPart[] = [];
+  for (let i = 0; i < content.length; i++) {
+    if (currentGroup.length === 2) {
+      groupsOfTwo.push(currentGroup);
+      currentGroup = [];
+    }
+    currentGroup.push(content[i]);
+  }
+  if (currentGroup.length > 0) {
+    groupsOfTwo.push(currentGroup);
+  }
+  return groupsOfTwo;
 };
 
 const getDownloadUrl = (result: SearchResultDetails) => {
