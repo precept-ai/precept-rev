@@ -13,8 +13,23 @@ import { ReactComponent as SearchIcon } from "./assets/images/search-icon.svg";
 import { ReactComponent as ProfileIcon } from "./assets/images/profile-icon.svg";
 import { ReactComponent as SettingsIcon } from "./assets/images/settings-icon.svg";
 import { ReactComponent as DataIcon } from "./assets/images/data-icon.svg";
+import { ReactComponent as LogoutIcon } from "./assets/images/logout-icon.svg";
 
 import { GiSocks } from "react-icons/gi";
+
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+import {
+  getAuth,
+  onAuthStateChanged,
+  GoogleAuthProvider,
+  User,
+  signInWithPopup,
+  signOut,
+} from "firebase/auth";
+import { firebaseConfig } from "./components/firebase-config";
+
+import GoogleLoginButton from "./assets/images/google-login.png";
 
 import "./assets/css/App.css";
 import SkeletonLoader from "./components/skeleton-loader";
@@ -44,6 +59,8 @@ import { IoMdArrowDropdown, IoMdClose } from "react-icons/io";
 import ProgressBar from "@ramonak/react-progress-bar";
 
 export interface AppState {
+  authed: boolean | "loading";
+  user: User | null;
   query: string;
   results: SearchResultDetails[];
   searchDuration: number;
@@ -109,10 +126,18 @@ const modalCustomStyles = {
 
 const languages = ["🇫🇷 FR", "🇩🇪 DE", "🇪🇸 ES", "🇮🇹 IT", "🇨🇳 CN", "🌏 GLOBAL"];
 
+// ADDED - Firebase App
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+const auth = getAuth(app);
+const googleAuthProvier = new GoogleAuthProvider();
+
 export default class App extends React.Component<{}, AppState> {
   constructor() {
     super({});
     this.state = {
+      authed: "loading",
+      user: null,
       query: "",
       results: [], // CHANGED!!
       dataSourceTypes: [],
@@ -181,6 +206,15 @@ export default class App extends React.Component<{}, AppState> {
   }
 
   componentDidMount() {
+    // ADDED - Firebase Auth
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        this.setState({ authed: true, user: user });
+      } else {
+        this.setState({ authed: false, user: null });
+      }
+    });
+
     if (localStorage.getItem("uuid") === null) {
       let uuid = uuidv4();
       localStorage.setItem("uuid", uuid);
@@ -210,6 +244,44 @@ export default class App extends React.Component<{}, AppState> {
     }
   }
 
+  handleLoginWithGoogle() {
+    signInWithPopup(auth, googleAuthProvier)
+      .then((result) => {
+        // This gives you a Google Access Token. You can use it to access the Google API.
+        const credential = GoogleAuthProvider.credentialFromResult(result);
+        if (credential) {
+          const token = credential.accessToken;
+          // The signed-in user info.
+          const user = result.user;
+          // IdP data available using getAdditionalUserInfo(result)
+          // ...
+          this.setState({ authed: true, user: user });
+        }
+      })
+      .catch((error) => {
+        // Handle Errors here.
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        // The email of the user's account used.
+        const email = error.customData.email;
+        // The AuthCredential type that was used.
+        const credential = GoogleAuthProvider.credentialFromError(error);
+        // ...
+      });
+  }
+
+  handleSignOut() {
+    signOut(auth)
+      .then(() => {
+        // Sign-out successful.
+        this.setState({ authed: false, user: null });
+        window.location.replace("/");
+      })
+      .catch((error) => {
+        // An error happened.
+      });
+  }
+
   handleSearch() {
     const path = window.location.pathname;
     const query = new URLSearchParams(window.location.search).get("query");
@@ -222,12 +294,17 @@ export default class App extends React.Component<{}, AppState> {
   async listDataSourceTypes() {
     try {
       const response = await api.get<DataSourceType[]>("/data-sources/types");
+      console.log(response.data);
+      const filteredResponse = response.data.filter(
+        (response) =>
+          response.name === "google_drive" || response.name === "slack"
+      );
       let dataSourceTypesDict: { [key: string]: DataSourceType } = {};
-      response.data.forEach((dataSourceType) => {
+      filteredResponse.forEach((dataSourceType) => {
         dataSourceTypesDict[dataSourceType.name] = dataSourceType;
       });
       this.setState({
-        dataSourceTypes: response.data,
+        dataSourceTypes: filteredResponse,
         dataSourceTypesDict: dataSourceTypesDict,
         didListedDataSources: true,
       });
@@ -501,9 +578,15 @@ export default class App extends React.Component<{}, AppState> {
           <button onClick={this.openModal} className="cursor-pointer">
             <DataIcon />
           </button>
-          <button onClick={this.goHomePage} className="cursor-pointer">
-            <ProfileIcon />
-          </button>
+          {this.state.authed === true ? (
+            <button onClick={this.handleSignOut} className="cursor-pointer">
+              <LogoutIcon />
+            </button>
+          ) : (
+            <button onClick={() => {}} className="cursor-pointer">
+              <ProfileIcon />
+            </button>
+          )}
         </div>
 
         <Tooltip id="my-tooltip" style={{ fontSize: "18px" }} />
@@ -738,84 +821,120 @@ export default class App extends React.Component<{}, AppState> {
             </div>
           </div>
         )}
-        <div
-          className={
-            "w-[100vw] z-10 filter min-h-screen " +
-            (this.state.isModalOpen ||
-            (this.state.didListedConnectedDataSources &&
-              this.state.connectedDataSources.length === 0)
-              ? "filter blur-sm"
-              : "") +
-            (this.state.showResultsPage ? "bg-white" : "")
-          }
-        >
-          <Modal
-            isOpen={this.state.isModalOpen}
-            onRequestClose={this.closeModal}
-            contentLabel="Example Modal"
-            style={modalCustomStyles}
-          >
-            <DataSourcePanel
-              onClose={this.closeModal}
-              connectedDataSources={this.state.connectedDataSources}
-              inIndexing={this.inIndexing()}
-              onAdded={this.dataSourcesAdded}
-              dataSourceTypesDict={this.state.dataSourceTypesDict}
-              onRemoved={this.dataSourceRemoved}
-            />
-          </Modal>
 
-          {/* front search page*/}
-          {!this.state.showResultsPage && (
-            <div className="relative flex flex-col items-center top-10 mx-auto w-full">
-              <h1 className="flex flex-col items-center text-4xl text-center text-white m-10">
-                {/* <GiSocks
+        {/* Login or loading or app */}
+        {this.state.authed === "loading" ? (
+          <div className="w-[100vw] z-10 filter min-h-screen bg-white flex flex-col items-center py-[80px] px-[100px] gap-[80px]">
+            <div className=" flex flex-col items-center justify-center gap-[10px]">
+              <div className="w-20 h-20 rounded-full animate-pulse bg-[rgba(0,0,0,0.04)] dark:bg-[rgba(0,0,0,0.8)]"></div>
+              <div className="w-[150px] h-[55px] rounded-md animate-pulse bg-[rgba(0,0,0,0.04)] dark:bg-[rgba(0,0,0,0.8)]"></div>
+            </div>
+            <div className="w-[200px] h-[65px] rounded-md animate-pulse bg-[rgba(0,0,0,0.04)] dark:bg-[rgba(0,0,0,0.8)]"></div>
+            <div className="w-[250px] h-[55px] rounded-[10px] animate-pulse bg-[rgba(0,0,0,0.04)] dark:bg-[rgba(0,0,0,0.8)]"></div>
+          </div>
+        ) : this.state.authed === false ? (
+          <div className="w-[100vw] z-10 filter min-h-screen bg-white flex flex-col items-center py-[80px] px-[100px] gap-[80px]">
+            <div className=" flex flex-col items-center justify-center gap-[10px]">
+              <img alt="Precept Logo" src={PreceptLogo} className="w-20 h-20" />
+              <h1
+                className={
+                  " text-[#000] block font-dm-sans text-4xl text-center"
+                }
+              >
+                Precept
+              </h1>
+            </div>
+            <h2 className="font-dm-sans font-bold text-5xl">Login</h2>
+            <button
+              onClick={this.handleLoginWithGoogle}
+              className="cursor-pointer"
+            >
+              <img
+                className="h-[55px] w-auto"
+                src={GoogleLoginButton}
+                alt="Login with Google"
+              />
+            </button>
+          </div>
+        ) : (
+          <div
+            className={
+              "w-[100vw] z-10 filter min-h-screen " +
+              (this.state.isModalOpen ||
+              (this.state.didListedConnectedDataSources &&
+                this.state.connectedDataSources.length === 0)
+                ? "filter blur-sm"
+                : "") +
+              (this.state.showResultsPage ? "bg-white" : "")
+            }
+          >
+            <Modal
+              isOpen={this.state.isModalOpen}
+              onRequestClose={this.closeModal}
+              contentLabel="Example Modal"
+              style={modalCustomStyles}
+            >
+              <DataSourcePanel
+                onClose={this.closeModal}
+                connectedDataSources={this.state.connectedDataSources}
+                inIndexing={this.inIndexing()}
+                onAdded={this.dataSourcesAdded}
+                dataSourceTypesDict={this.state.dataSourceTypesDict}
+                onRemoved={this.dataSourceRemoved}
+              />
+            </Modal>
+
+            {/* front search page*/}
+            {!this.state.showResultsPage && (
+              <div className="relative flex flex-col items-center top-10 mx-auto w-full">
+                <h1 className="flex flex-col items-center text-4xl text-center text-white m-10">
+                  {/* <GiSocks
                   className={
                     "text-7xl text-center mt-4 mr-7" + this.getSocksColor()
                   }
                 ></GiSocks> */}
-                <img
-                  alt="Precept Logo"
-                  src={PreceptLogo}
-                  className="w-20 h-20"
+                  <img
+                    alt="Precept Logo"
+                    src={PreceptLogo}
+                    className="w-20 h-20"
+                  />
+                  <span
+                    className={
+                      " text-[#000] block font-dm-sans md:leading-normal bg-clip-text bg-gradient-to-l"
+                    }
+                  >
+                    Precept
+                  </span>
+                </h1>
+                <SearchBar
+                  widthPercentage={32}
+                  isDisabled={this.state.isServerDown}
+                  query={this.state.query}
+                  isLoading={this.state.isLoading}
+                  showReset={this.state.results.length > 0}
+                  onSearch={this.goSearchPage}
+                  onQueryChange={this.handleQueryChange}
+                  onClear={this.clear}
+                  showSuggestions={true}
                 />
-                <span
-                  className={
-                    " text-[#000] block font-dm-sans md:leading-normal bg-clip-text bg-gradient-to-l"
-                  }
-                >
-                  Precept
-                </span>
-              </h1>
-              <SearchBar
-                widthPercentage={32}
-                isDisabled={this.state.isServerDown}
-                query={this.state.query}
-                isLoading={this.state.isLoading}
-                showReset={this.state.results.length > 0}
-                onSearch={this.goSearchPage}
-                onQueryChange={this.handleQueryChange}
-                onClear={this.clear}
-                showSuggestions={true}
-              />
 
-              <button
-                onClick={this.goSearchPage}
-                className="h-9 w-28 mt-8 p-3 flex items-center justify-center hover:shadow-sm
+                <button
+                  onClick={this.goSearchPage}
+                  className="h-9 w-28 mt-8 p-3 flex items-center justify-center hover:shadow-sm
                   transition duration-150 ease-in-out hover:shadow-[#6c6c6c] bg-[#0D7E97] rounded border-[.5px] border-[#6e6e6e88]"
-              >
-                <span className="font-bold text-[15px] text-[#fff]">
-                  Search
-                </span>
-                <img alt="enter" className="ml-2" src={EnterImage}></img>
-              </button>
-            </div>
-          )}
+                >
+                  <span className="font-bold text-[15px] text-[#fff]">
+                    Search
+                  </span>
+                  <img alt="enter" className="ml-2" src={EnterImage}></img>
+                </button>
+              </div>
+            )}
 
-          {/* results page */}
-          {this.state.showResultsPage && (
-            <div className="relative flex flex-row w-full bg-white min-h-full">
-              {/* <div className="fixed h-screen w-[100px] bg-[#e5e5e5] flex flex-col items-center px-[20px] py-[40px] gap-[40px]">
+            {/* results page */}
+            {this.state.showResultsPage && (
+              <div className="relative flex flex-row w-full bg-white min-h-full">
+                {/* <div className="fixed h-screen w-[100px] bg-[#e5e5e5] flex flex-col items-center px-[20px] py-[40px] gap-[40px]">
                 <button onClick={this.goHomePage} className="cursor-pointer">
                   <img
                     src={PreceptLogo}
@@ -834,74 +953,77 @@ export default class App extends React.Component<{}, AppState> {
                 </button>
               </div> */}
 
-              {/* <span className="flex flex-row items-start text-3xl text-center text-white m-10 mx-7 mt-0">
+                {/* <span className="flex flex-row items-start text-3xl text-center text-white m-10 mx-7 mt-0">
                 <span className="text-[#0D7E97]	block font-dm-sans md:leading-normal bg-clip-text bg-gradient-to-l">
                   Precept
                 </span>
               </span> */}
-              <div className="flex flex-col items-center w-full ml-[100px]">
-                <div className="w-full flex justify-center items-center py-[20px] bg-[rgba(0,0,0,0.04)] shadow-[0_2px_8px_rgba(0,0,0,0.12)]">
-                  <SearchBar
-                    widthPercentage={40}
-                    isDisabled={this.state.isServerDown}
-                    query={this.state.query}
-                    isLoading={this.state.isLoading}
-                    showReset={this.state.results.length > 0}
-                    onSearch={this.goSearchPage}
-                    onQueryChange={this.handleQueryChange}
-                    onClear={this.clear}
-                    showSuggestions={true}
-                  />
-                </div>
-                {this.state.isLoading && (
-                  <div className="w-full flex flex-col gap-[20px] px-[20px] py-[80px]">
-                    <SkeletonLoader />
-                    <SkeletonLoader />
+                <div className="flex flex-col items-center w-full pl-[100px]">
+                  <div className="w-full flex justify-center items-center py-[20px] bg-[rgba(0,0,0,0.04)] shadow-[0_2px_8px_rgba(0,0,0,0.12)]">
+                    <SearchBar
+                      widthPercentage={40}
+                      isDisabled={this.state.isServerDown}
+                      query={this.state.query}
+                      isLoading={this.state.isLoading}
+                      showReset={this.state.results.length > 0}
+                      onSearch={this.goSearchPage}
+                      onQueryChange={this.handleQueryChange}
+                      onClear={this.clear}
+                      showSuggestions={true}
+                    />
                   </div>
-                )}
-                {!this.state.isLoading && (
-                  <span className="text-[#D2D2D2] font-dm-sans font-medium text-base leading-[22px] mt-3">
-                    {this.bundleSearchResults(this.state.results).length}{" "}
-                    {this.bundleSearchResults(this.state.results).length > 1
-                      ? "Results"
-                      : "Result"}{" "}
-                    ({this.state.searchDuration} seconds)
-                  </span>
-                )}
-                {this.state.dataSourceTypes.length > 0 && (
-                  <div className="w-full flex flex-col gap-[20px] px-[20px] py-[40px]">
-                    {this.bundleSearchResults(this.state.results).map(
-                      (result, index) => {
-                        return (
-                          <SearchResult
-                            key={index}
-                            resultDetails={result}
-                            dataSourceType={
-                              this.state.dataSourceTypesDict[result.data_source]
-                            }
-                            openModal={this.openResultModal}
-                            closeModal={this.closeResultModal}
-                          />
-                        );
+                  {this.state.isLoading && (
+                    <div className="w-full flex flex-col gap-[20px] px-[20px] py-[80px]">
+                      <SkeletonLoader />
+                      <SkeletonLoader />
+                    </div>
+                  )}
+                  {!this.state.isLoading && (
+                    <span className="text-[#D2D2D2] font-dm-sans font-medium text-base leading-[22px] mt-3">
+                      {this.bundleSearchResults(this.state.results).length}{" "}
+                      {this.bundleSearchResults(this.state.results).length > 1
+                        ? "Results"
+                        : "Result"}{" "}
+                      ({this.state.searchDuration} seconds)
+                    </span>
+                  )}
+                  {this.state.dataSourceTypes.length > 0 && (
+                    <div className="w-full flex flex-col gap-[20px] px-[20px] py-[40px]">
+                      {this.bundleSearchResults(this.state.results).map(
+                        (result, index) => {
+                          return (
+                            <SearchResult
+                              key={index}
+                              resultDetails={result}
+                              dataSourceType={
+                                this.state.dataSourceTypesDict[
+                                  result.data_source
+                                ]
+                              }
+                              openModal={this.openResultModal}
+                              closeModal={this.closeResultModal}
+                            />
+                          );
+                        }
+                      )}
+                    </div>
+                  )}
+                  {this.state.showResultModal && this.state.aciveResult && (
+                    <ResultModal
+                      result={this.state.aciveResult}
+                      dataSourceType={
+                        this.state.dataSourceTypesDict[
+                          this.state.aciveResult.data_source
+                        ]
                       }
-                    )}
-                  </div>
-                )}
-                {this.state.showResultModal && this.state.aciveResult && (
-                  <ResultModal
-                    result={this.state.aciveResult}
-                    dataSourceType={
-                      this.state.dataSourceTypesDict[
-                        this.state.aciveResult.data_source
-                      ]
-                    }
-                    closeModal={this.closeResultModal}
-                  />
-                )}
+                      closeModal={this.closeResultModal}
+                    />
+                  )}
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
     );
   }
