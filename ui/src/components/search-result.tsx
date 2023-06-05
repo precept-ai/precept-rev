@@ -65,26 +65,37 @@ export const SearchResult = (props: SearchResultProps) => {
   return (
     <div
       className={
-        "px-10 py-5 bg-[#fff] rounded-[10px] hover:drop-shadow-[0_4px_8px_rgba(0,0,0,0.12)] cursor-pointer"
+        "px-10 py-5 w-full flex flex-row bg-[#fff] rounded-[10px] hover:drop-shadow-[0_4px_8px_rgba(0,0,0,0.12)] cursor-pointer"
       }
       onClick={
-        props.openModal ? () => props.openModal(props.resultDetails) : () => {}
+        props.openModal
+          ? props.resultDetails.data_source === "slack"
+            ? () => window.open(props.resultDetails.url, "_blank")
+            : () => props.openModal(props.resultDetails)
+          : () => {}
       }
     >
-      {props.resultDetails.type !== ResultType.Comment && (
-        <span className="relative text-sm font-dm-sans float-right text-[#000] right-2 top-2">
-          {props.resultDetails.score.toFixed(2)}%
-        </span>
-      )}
-      <div className="flex flex-row items-stretch">
+      <div className="flex flex-row items-stretch w-full">
         <span className="flex flex-col items-center mt-2 mr-2">
           {getBigIcon(props)}
           {props.resultDetails.child && (
             <span className={"w-[1px] mt-2 h-[85%] bg-[#66548D]"}></span>
           )}
         </span>
-        <p className="w-11/12 p-2 pt-0 ml-1 text-[#A3A3A3] text-sm font-dm-sans">
+        <p className="w-full p-[20px] pt-0 ml-1 text-[#A3A3A3] text-sm font-dm-sans">
+          {props.resultDetails.type !== ResultType.Comment &&
+            props.resultDetails.score < 40 && (
+              <span className="text-sm font-dm-sans font-bold text-red-600">
+                Warning: low match
+              </span>
+            )}
           <div className="flex flex-row items-center justify-start">
+            {/* {props.resultDetails.type !== ResultType.Comment &&
+              props.resultDetails.score < 40 && (
+                <span className="text-sm font-dm-sans font-bold text-red-600">
+                  Warning: low match
+                </span>
+              )} */}
             {props.resultDetails.type === ResultType.Issue && (
               <span className="mr-[6px] px-[7px] py-[1px] font-dm-sans font-medium text-[15px] bg-[#392E58] text-[#0D7E97] rounded-lg">
                 ISSUE
@@ -237,6 +248,18 @@ export const SearchResult = (props: SearchResultProps) => {
             </span>
           }
         </p>
+        <button
+          onClick={
+            props.openModal
+              ? props.resultDetails.data_source === "slack"
+                ? () => window.open(props.resultDetails.url, "_blank")
+                : () => props.openModal(props.resultDetails)
+              : () => {}
+          }
+          className="self-center w-[150px] h-[45px] bg-[rgba(0,0,0,0.04)] hover:bg-[rgba(13,126,151,0.12)] cursor-pointer font-black hover:font-[#0D7E97] font-dm-sans rounded-[10px] top-0 bottom-0"
+        >
+          {props.resultDetails.data_source === "slack" ? "Open" : "Preview"}
+        </button>
       </div>
       {props.resultDetails.child && (
         <SearchResult
@@ -365,14 +388,14 @@ export function getBigIcon(props: SearchResultProps) {
       }
       break;
     case ResultType.Message:
-      containingClasses = "rounded-full";
+      containingClasses = " rounded-full";
       containingImage = props.resultDetails.author_image_data
         ? props.resultDetails.author_image_data
         : props.resultDetails.author_image_url;
       onTopImage = props.dataSourceType.image_base64;
       break;
     case ResultType.Comment:
-      containingClasses = "rounded-full";
+      containingClasses = " rounded-full";
       containingImage = props.resultDetails.author_image_data
         ? props.resultDetails.author_image_data
         : props.resultDetails.author_image_url;
@@ -381,18 +404,20 @@ export function getBigIcon(props: SearchResultProps) {
   if (onTopImage !== "") {
     return (
       <div className="mt-2 mr-[10px] drop-shadow-[0_0_25px_rgba(212,179,255,0.15)]">
+        <img
+          alt="file-type"
+          // className="company-logo rounded-full p-[3px] h-[24px] w-[24px] absolute -right-[5px] -bottom-[5px] bg-white"
+          className={"  h-auto w-[50px] "}
+          src={onTopImage}
+        ></img>
         <Img
           height={"45px"}
           width={"45px"}
-          className={containingClasses}
+          // className={containingClasses}
+          className={"company-logo p-[3px] h-[24px] w-[24px] absolute -right-[5px] -bottom-[5px] bg-white" + containingClasses}
           alt="file-type"
           src={[containingImage, DefaultUserImage]}
         />
-        <img
-          alt="file-type"
-          className="company-logo rounded-full p-[3px] h-[24px] w-[24px] absolute -right-[5px] -bottom-[5px] bg-white"
-          src={onTopImage}
-        ></img>
       </div>
     );
   } else {
