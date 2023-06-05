@@ -17,7 +17,7 @@ export const ResultModal = (props: ResultModalProps) => {
         onClick={props.closeModal}
       ></div>
       <div
-        className="w-4/5 h-[85vh] flex flex-col justify-center items-center p-[20px] gap-[0px] z-20 bg-[#fff] rounded-[10px]"
+        className="w-4/5 h-[85vh] flex flex-col items-center p-[20px] gap-[0px] z-20 bg-[#fff] rounded-[10px]"
         onClick={() => {}}
       >
         <div className="w-full flex flex-row items-start p-[10px] gap-[20px]">
@@ -83,6 +83,7 @@ export const ResultModal = (props: ResultModalProps) => {
                   Open
                 </button>
               </a>
+              {props.result.data_source === "google_drive" && (
               <a
                 className="text-black font-dm-sans"
                 href={getDownloadUrl(props.result)}
@@ -91,6 +92,7 @@ export const ResultModal = (props: ResultModalProps) => {
               >
                 Download
               </a>
+              )}
             </div>
           </div>
           <button
@@ -103,7 +105,7 @@ export const ResultModal = (props: ResultModalProps) => {
 
         {props.result.data_source === "google_drive" && (
           <iframe
-            className="w-full h-full"
+            className="w-full h-full border-0"
             src={getPreviewUrl(props.result)}
             allow="autoplay"
             allowFullScreen={true}
@@ -150,11 +152,13 @@ const getDownloadUrl = (result: SearchResultDetails) => {
 };
 
 const getPreviewUrl = (result: SearchResultDetails) => {
-  // If the url ends with "/edit", remove that
-  let trimmedUrl = trimGoogleUrl(result.url);
-  // add /preview
-  let finalUrl = trimmedUrl + "/preview";
-  return finalUrl;
+  if (result.data_source === "google_drive") {
+    // If the url ends with "/edit", remove that
+    let trimmedUrl = trimGoogleUrl(result.url);
+    // add /preview
+    let finalUrl = trimmedUrl + "/preview";
+    return finalUrl;
+  }
 };
 
 const trimGoogleUrl = (url: string) => {
