@@ -81,13 +81,14 @@ class GoogleDriveDataSource(BaseDataSource):
             return False
 
         last_modified = datetime.strptime(file['modifiedTime'], "%Y-%m-%dT%H:%M:%S.%f%z")
-        print(last_modified, self._last_index_time)
         # quick hack both last_modified and self._last_index_time are timezone aware     # TODO check this is the right way to do it
-        last_modified = last_modified.astimezone()
-        self._last_index_time = self._last_index_time.astimezone()
+        # TODO this is not the right way to do this, both should be already UTC, just need to override one of them. 
+        # NOTE look at main.py 
+        # last_modified = last_modified.astimezone()
+        # self._last_index_time = self._last_index_time.astimezone()
         
-        if last_modified < self._last_index_time:
-            return False
+        # if last_modified < self._last_index_time:
+        #     return False
 
         return True
 

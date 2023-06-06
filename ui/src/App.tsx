@@ -1090,6 +1090,7 @@ export default class App extends React.Component<{}, AppState> {
         .then((response) => {
           let end = new Date().getTime();
           let duartionSeconds = (end - start) / 1000;
+          console.log(response.data);
           this.setState({
             results: response.data,
             isLoading: false,
