@@ -114,7 +114,13 @@ export const SearchResult = (props: SearchResultProps) => {
               </span>
             )}
             <button
-              onClick={() => handleOpenClick()}
+              onClick={
+                props.openModal
+                  ? props.resultDetails.data_source === "slack"
+                    ? () => {}
+                    : () => props.openModal(props.resultDetails)
+                  : () => {}
+              }
               className="text-[24px] overflow-hidden overflow-ellipsis whitespace-nowrap text-[#0D7E97] text-xl font-dm-sans font-medium hover:underline hover:cursor-pointer"
             >
               {props.resultDetails.title}
@@ -268,9 +274,8 @@ export const SearchResult = (props: SearchResultProps) => {
           onClick={
             props.openModal
               ? props.resultDetails.data_source === "slack"
-                ? () => handleOpenClick()
-                : // () => props.openModal(props.resultDetails)
-                  () => props.openModal(props.resultDetails)
+                ? () => {}
+                : () => props.openModal(props.resultDetails)
               : () => {}
           }
           className="self-center w-[150px] h-[45px] bg-[rgba(0,0,0,0.04)] hover:bg-[rgba(13,126,151,0.12)] cursor-pointer font-black hover:font-[#0D7E97] font-dm-sans rounded-[10px] top-0 bottom-0"
