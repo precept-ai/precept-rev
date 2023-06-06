@@ -672,12 +672,11 @@ export default class App extends React.Component<{}, AppState> {
       // Otherwise, it is not from GDrive, so check if it is from Slack
       else if (result.data_source === "slack") {
         // If it is from Slack, separate the first text part and the second text part
-        const newSlackResults: SearchResultDetails[] = [
-          { ...result, content: [result.content[0]] },
-          { ...result, content: [result.content[1]], score: result.score - 5 },
-        ];
-        newArray.push(newSlackResults[0]);
-        newArray.push(newSlackResults[1]);
+        const newSlackResult: SearchResultDetails = {
+          ...result,
+          content: [result.content[0]],
+        };
+        newArray.push(newSlackResult);
       }
       // Otherwise it is not from GDrive or Slack, so we just push it to the result array
       else {
