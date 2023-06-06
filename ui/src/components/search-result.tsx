@@ -82,7 +82,8 @@ export const SearchResult = (props: SearchResultProps) => {
         props.openModal
           ? props.resultDetails.data_source === "slack"
             ? () => handleOpenClick()
-            : () => props.openModal(props.resultDetails)
+            : // () => props.openModal(props.resultDetails)
+              () => props.openModal(props.resultDetails)
           : () => {}
       }
     >
@@ -268,7 +269,8 @@ export const SearchResult = (props: SearchResultProps) => {
             props.openModal
               ? props.resultDetails.data_source === "slack"
                 ? () => handleOpenClick()
-                : () => props.openModal(props.resultDetails)
+                : // () => props.openModal(props.resultDetails)
+                  () => props.openModal(props.resultDetails)
               : () => {}
           }
           className="self-center w-[150px] h-[45px] bg-[rgba(0,0,0,0.04)] hover:bg-[rgba(13,126,151,0.12)] cursor-pointer font-black hover:font-[#0D7E97] font-dm-sans rounded-[10px] top-0 bottom-0"

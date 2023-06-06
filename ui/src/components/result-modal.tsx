@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { FileType, SearchResultDetails } from "./search-result";
 import { ResultType, getBigIcon, TextPart } from "./search-result";
 import { DataSourceType } from "../data-source";
@@ -13,6 +13,44 @@ export interface ResultModalProps {
 }
 
 export const ResultModal = (props: ResultModalProps) => {
+  const [slackMessages, setSlackMessages] =
+    useState<SlackMessagesResponse | null>();
+
+  useEffect(() => {
+    const getSlackMessages = async () => {
+      try {
+        const { channel, ts } = getSlackUrlParams(props.result.url);
+        try {
+          const slackMessagesResponse = await fetch(
+            "https://73a9-2a02-c7f-603f-d300-2831-e3e3-abd9-6c11.ngrok-free.app/",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                channel: channel,
+                ts: ts,
+              }),
+            }
+          );
+          const slackMessages: SlackMessagesResponse =
+            await slackMessagesResponse.json();
+          console.log(slackMessages);
+          setSlackMessages(slackMessages);
+        } catch (e) {
+          console.log("Error communicating with server for Slack messages");
+        }
+      } catch (e) {
+        console.log("Error getting slack url params");
+        console.log(e);
+      }
+    };
+    if (props.result.data_source === "slack") {
+      getSlackMessages();
+    }
+  }, []);
+
   const handleOpenClick = async (url: string) => {
     // Add the document to the recent documents list
     if (props.addRecentDoc) {
@@ -116,6 +154,48 @@ export const ResultModal = (props: ResultModalProps) => {
             title="Document Preview"
           />
         )}
+        {props.result.data_source === "slack" &&
+          (slackMessages ? (
+            <div className="w-full h-full">
+              {slackMessages.messages.map((message, index) => (
+                <div
+                  key={index}
+                  className="w-full flex flex-col items-start p-[10px] gap-[10px]"
+                >
+                  {message.text &&
+                    (!message.subtype ||
+                      message.subtype !== "channel_join") && (
+                      <span className={"text-md font-dm-sans font-regular"}>
+                        {message.text}
+                      </span>
+                    )}
+                  {message.files &&
+                    message.files.map((file, index) => (
+                      <div
+                        key={index}
+                        className="w-full h-full flex flex-col items-start p-[10px] gap-[10px]"
+                      >
+                        <span className={"text-md font-dm-sans font-regular"}>
+                          {file.name}
+                        </span>
+                        <button
+                          onClick={() =>
+                            handleOpenClick(file.url_private_download)
+                          }
+                          className="w-full max-w-[250px] h-[45px] bg-[#0d7e97] text-white font-dm-sans font-bold rounded-[10px] cursor-pointer border-none outline-none"
+                        >
+                          Download
+                        </button>
+                      </div>
+                    ))}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <>
+              <p>Loading</p>
+            </>
+          ))}
       </div>
     </div>
   );
@@ -176,3 +256,87 @@ const trimGoogleUrl = (url: string) => {
   }
   return trimmedUrl;
 };
+
+const getSlackUrlParams = (slackUrl: string) => {
+  const url = new URLSearchParams(slackUrl);
+  const channel = slackUrl.split("channel=")[1].split("&")[0];
+  const ts = url.get("message_ts");
+  if (!ts) {
+    throw new Error("ts not found in slack url");
+  }
+  if (!channel) {
+    throw new Error("channel not found in slack url");
+  }
+  return { channel, ts };
+};
+
+interface SlackBlock {
+  type: string;
+  block_id: string;
+  elements: SlackBlockElement[];
+}
+
+interface SlackBlockElement {
+  type: string;
+  elements: SlackBlockTextElement[];
+}
+
+interface SlackBlockTextElement {
+  type: string;
+  text: string;
+}
+
+interface UserDetails {
+  display_name: string;
+}
+
+interface SlackFile {
+  id: string;
+  created: number;
+  timestamp: number;
+  name: string;
+  title: string;
+  mimetype: string;
+  filetype: string;
+  pretty_type: string;
+  user: string;
+  user_team: string;
+  editable: boolean;
+  size: number;
+  mode: string;
+  is_external: boolean;
+  external_type: string;
+  is_public: boolean;
+  public_url_shared: boolean;
+  display_as_bot: boolean;
+  username: string;
+  url_private: string;
+  url_private_download: string;
+  media_display_type: string;
+  thumb_pdf: string;
+  thumb_pdf_w: number;
+  thumb_pdf_h: number;
+  permalink: string;
+  permalink_public: string;
+  is_starred: boolean;
+  has_rich_preview: boolean;
+  file_access: string;
+}
+
+interface SlackMessage {
+  type: string;
+  subtype?: string;
+  ts: string;
+  user: string | UserDetails;
+  text: string;
+  blocks?: SlackBlock[];
+  files?: SlackFile[];
+  upload?: boolean;
+  display_aw_bot?: boolean;
+  client_msg_id?: string;
+}
+
+interface SlackMessagesResponse {
+  messages: SlackMessage[];
+  currentMessage: SlackMessage;
+}
