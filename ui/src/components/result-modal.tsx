@@ -2,14 +2,24 @@ import React from "react";
 import { FileType, SearchResultDetails } from "./search-result";
 import { ResultType, getBigIcon, TextPart } from "./search-result";
 import { DataSourceType } from "../data-source";
+import { Firestore } from "firebase/firestore";
 
 export interface ResultModalProps {
   result: SearchResultDetails;
   dataSourceType: DataSourceType;
   closeModal: () => void;
+  addRecentDoc?: (docToAdd: SearchResultDetails) => Promise<void>;
+  db: Firestore;
 }
 
 export const ResultModal = (props: ResultModalProps) => {
+  const handleOpenClick = async (url: string) => {
+    // Add the document to the recent documents list
+    if (props.addRecentDoc) {
+      await props.addRecentDoc(props.result);
+      window.open(url, "_blank");
+    }
+  };
   return (
     <div className="fixed top-0 left-0 w-screen h-screen flex flex-row justify-center items-center bg-[rgba(0,0,0,0.5)]">
       <div
@@ -73,25 +83,19 @@ export const ResultModal = (props: ResultModalProps) => {
               )} */}
             </div>
             <div className="w-full flex flex-row items-center p-[10px] gap-[40px]">
-              <a
-                href={props.result.url}
-                target="_blank"
-                rel="noreferrer"
-                className="w-full max-w-[250px] no-underline color text-white cursor-pointer"
+              <button
+                onClick={() => handleOpenClick(props.result.url)}
+                className="w-full max-w-[250px] h-[45px] bg-[#0d7e97] text-white font-dm-sans font-bold rounded-[10px] cursor-pointer border-none outline-none"
               >
-                <button className="w-full max-w-[250px] h-[45px] bg-[#0d7e97] text-white font-dm-sans font-bold rounded-[10px] cursor-pointer border-none outline-none">
-                  Open
-                </button>
-              </a>
+                Open
+              </button>
               {props.result.data_source === "google_drive" && (
-              <a
-                className="text-black font-dm-sans"
-                href={getDownloadUrl(props.result)}
-                target="_blank"
-                rel="noreferrer"
-              >
-                Download
-              </a>
+                <button
+                  className="text-black font-dm-sans bg-[rgba(0,0,0,0)] cursor-pointer hover:underline"
+                  onClick={() => handleOpenClick(getDownloadUrl(props.result))}
+                >
+                  Download
+                </button>
               )}
             </div>
           </div>

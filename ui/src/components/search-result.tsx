@@ -14,6 +14,8 @@ import { RiGitRepositoryLine } from "react-icons/ri";
 import { GoAlert } from "react-icons/go";
 import { MdVerified } from "react-icons/md";
 
+import { Firestore } from "firebase/firestore";
+
 export interface TextPart {
   content: string;
   bold: boolean;
@@ -59,9 +61,18 @@ export interface SearchResultProps {
   dataSourceType: DataSourceType;
   openModal?: (result: SearchResultDetails) => void;
   closeModal?: () => void;
+  addRecentDoc?: (docToAdd: SearchResultDetails) => Promise<void>;
+  db: Firestore;
 }
 
 export const SearchResult = (props: SearchResultProps) => {
+  const handleOpenClick = async () => {
+    // Add the document to the recent documents list
+    if (props.addRecentDoc) {
+      await props.addRecentDoc(props.resultDetails);
+      window.open(props.resultDetails.url, "_blank");
+    }
+  };
   return (
     <div
       className={
@@ -70,7 +81,7 @@ export const SearchResult = (props: SearchResultProps) => {
       onClick={
         props.openModal
           ? props.resultDetails.data_source === "slack"
-            ? () => window.open(props.resultDetails.url, "_blank")
+            ? () => handleOpenClick()
             : () => props.openModal(props.resultDetails)
           : () => {}
       }
@@ -101,14 +112,12 @@ export const SearchResult = (props: SearchResultProps) => {
                 ISSUE
               </span>
             )}
-            <a
+            <button
+              onClick={() => handleOpenClick()}
               className="text-[24px] overflow-hidden overflow-ellipsis whitespace-nowrap text-[#0D7E97] text-xl font-dm-sans font-medium hover:underline hover:cursor-pointer"
-              href={props.resultDetails.url}
-              rel="noreferrer"
-              target="_blank"
             >
               {props.resultDetails.title}
-            </a>
+            </button>
             {props.resultDetails.type === ResultType.Comment && (
               <span className="flex flex-row items-center justify-center ml-2 mt-[5px] font-dm-sans">
                 Commented {getDaysAgo(props.resultDetails.time)}
@@ -203,7 +212,7 @@ export const SearchResult = (props: SearchResultProps) => {
             </span>
           )}
           {
-            <span>
+            <span className="line-clamp-2">
               {/* {props.resultDetails.content.map((text_part, index) => {
                 return (
                   <>
@@ -252,7 +261,7 @@ export const SearchResult = (props: SearchResultProps) => {
           onClick={
             props.openModal
               ? props.resultDetails.data_source === "slack"
-                ? () => window.open(props.resultDetails.url, "_blank")
+                ? () => handleOpenClick()
                 : () => props.openModal(props.resultDetails)
               : () => {}
           }
@@ -414,7 +423,10 @@ export function getBigIcon(props: SearchResultProps) {
           height={"45px"}
           width={"45px"}
           // className={containingClasses}
-          className={"company-logo p-[3px] h-[24px] w-[24px] absolute -right-[5px] -bottom-[5px] bg-white" + containingClasses}
+          className={
+            "company-logo p-[3px] h-[24px] w-[24px] absolute -right-[5px] -bottom-[5px] bg-white" +
+            containingClasses
+          }
           alt="file-type"
           src={[containingImage, DefaultUserImage]}
         />
