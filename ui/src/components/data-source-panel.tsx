@@ -7,6 +7,10 @@ import "react-confirm-alert/src/react-confirm-alert.css"; // Import css
 import CopyThis from "../assets/images/copy-this.png";
 import LeftPane from "../assets/images/left-pane-instructions.png";
 import notionLogo from "../assets/images/notion.png";
+import airtableLogo from "../assets/images/airtable.png";
+import gmailLogo from "../assets/images/gmail.png";
+import githubLogo from "../assets/images/github.png";
+
 
 import { FaRegEdit } from "react-icons/fa";
 import { AiFillCheckCircle } from "react-icons/ai";
@@ -273,11 +277,55 @@ export default class DataSourcePanel extends React.Component<
                 <IoAddCircleOutline className="ml-4 text-black text-2xl hover:text-[#0D7E97] hover:cursor-pointer transition duration-200 ease-in-out"></IoAddCircleOutline>
               </div>
               {/* Coming soon */}
+              {/* Notion */}
               <div
                 onClick={() => {}}
                 className="flex hover:text-[#9875d4] py-2 pl-5 pr-3 m-2 flex-row items-center justify-center bg-[rgba(0,0,0,0.06)] hover:border-[#0D7E97] rounded-lg font-dm-sans leading-[28px] border-[#000] border-b-[.5px] transition duration-300 ease-in-out"
               >
                 <img alt="" className={"mr-2 h-[20px]"} src={notionLogo}></img>
+                {/* <h1 className="text-black">Add</h1> */}
+                <h1 className="text-gray-500 font-dm-sans">Coming soon...</h1>
+                <IoAddCircleOutline className="ml-6 text-gray-500 text-2xl transition duration-200 ease-in-out"></IoAddCircleOutline>
+              </div>
+
+              {/* Airtable */}
+              <div
+                onClick={() => {}}
+                className="flex hover:text-[#9875d4] py-2 pl-5 pr-3 m-2 flex-row items-center justify-center bg-[rgba(0,0,0,0.06)] hover:border-[#0D7E97] rounded-lg font-dm-sans leading-[28px] border-[#000] border-b-[.5px] transition duration-300 ease-in-out"
+              >
+                <img alt="" className={"mr-2 h-[20px]"} src={airtableLogo}></img>
+                {/* <h1 className="text-black">Add</h1> */}
+                <h1 className="text-gray-500 font-dm-sans">Coming soon...</h1>
+                <IoAddCircleOutline className="ml-6 text-gray-500 text-2xl transition duration-200 ease-in-out"></IoAddCircleOutline>
+              </div>
+
+              {/* Gmail */}
+              <div
+                onClick={() => {}}
+                className="flex hover:text-[#9875d4] py-2 pl-5 pr-3 m-2 flex-row items-center justify-center bg-[rgba(0,0,0,0.06)] hover:border-[#0D7E97] rounded-lg font-dm-sans leading-[28px] border-[#000] border-b-[.5px] transition duration-300 ease-in-out"
+              >
+                <img alt="" className={"mr-2 h-[20px]"} src={gmailLogo}></img>
+                {/* <h1 className="text-black">Add</h1> */}
+                <h1 className="text-gray-500 font-dm-sans">Coming soon...</h1>
+                <IoAddCircleOutline className="ml-6 text-gray-500 text-2xl transition duration-200 ease-in-out"></IoAddCircleOutline>
+              </div>
+
+              {/* HubSpot */}
+              {/* <div
+                onClick={() => {}}
+                className="flex hover:text-[#9875d4] py-2 pl-5 pr-3 m-2 flex-row items-center justify-center bg-[rgba(0,0,0,0.06)] hover:border-[#0D7E97] rounded-lg font-dm-sans leading-[28px] border-[#000] border-b-[.5px] transition duration-300 ease-in-out"
+              >
+                <img alt="" className={"mr-2 h-[20px]"} src={notionLogo}></img>
+                <h1 className="text-gray-500 font-dm-sans">Coming soon...</h1>
+                <IoAddCircleOutline className="ml-6 text-gray-500 text-2xl transition duration-200 ease-in-out"></IoAddCircleOutline>
+              </div> */}
+
+              {/* GitHub */}
+              <div
+                onClick={() => {}}
+                className="flex hover:text-[#9875d4] py-2 pl-5 pr-3 m-2 flex-row items-center justify-center bg-[rgba(0,0,0,0.06)] hover:border-[#0D7E97] rounded-lg font-dm-sans leading-[28px] border-[#000] border-b-[.5px] transition duration-300 ease-in-out"
+              >
+                <img alt="" className={"mr-2 h-[20px]"} src={githubLogo}></img>
                 {/* <h1 className="text-black">Add</h1> */}
                 <h1 className="text-gray-500 font-dm-sans">Coming soon...</h1>
                 <IoAddCircleOutline className="ml-6 text-gray-500 text-2xl transition duration-200 ease-in-out"></IoAddCircleOutline>
