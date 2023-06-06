@@ -93,7 +93,7 @@ export const SearchResult = (props: SearchResultProps) => {
             <span className={"w-[1px] mt-2 h-[85%] bg-[#66548D]"}></span>
           )}
         </span>
-        <p className="w-full px-[20px] pt-0 ml-1 text-[#A3A3A3] text-sm font-dm-sans">
+        <p className="w-full px-[20px] pt-0 ml-1 text-[#A3A3A3] text-sm font-dm-sans overflow-hidden">
           {props.resultDetails.type !== ResultType.Comment &&
             props.resultDetails.score < 40 && (
               <span className="text-sm font-dm-sans font-bold text-red-600">
@@ -162,11 +162,11 @@ export const SearchResult = (props: SearchResultProps) => {
           </div>
           {props.resultDetails.type !== ResultType.Comment && (
             <span
-              className={`flex flex-row text-[16px] mt-[6px] font-dm-sans text-[#0D7E97] ${
+              className={`flex flex-row text-[16px] mt-[6px] font-dm-sans text-[#0D7E97] w-full ${
                 props.resultDetails.content.length > 0 ? "mb-4" : ""
               }`}
             >
-              <span className="flex flex-row items-center leading-[17px] px-[6px] py-[3px] bg-[#0D7E97] rounded-[5px] ml-0 text-[#fff]">
+              <span className="flex flex-row items-center leading-[17px] px-[6px] py-[3px] bg-[#0D7E97] rounded-[5px] ml-0 text-[#fff] max-w-[25%]">
                 {props.resultDetails.type === ResultType.Docment && (
                   <img
                     alt="purple-folder"
@@ -177,14 +177,16 @@ export const SearchResult = (props: SearchResultProps) => {
                 {props.resultDetails.type === ResultType.Issue && (
                   <RiGitRepositoryLine className="h-[14px] mt-[1px] mr-[2px]"></RiGitRepositoryLine>
                 )}
-                <span className="text-[15x] font-dm-sans">
-                  {props.resultDetails.type === ResultType.Docment && " / "}
-                  {props.resultDetails.type === ResultType.Message && "#"}
-                  {props.resultDetails.location}{" "}
+                <span className="text-[15x] font-dm-sans line-clamp-1">
+                  {props.resultDetails.type === ResultType.Docment
+                    ? " /" + props.resultDetails.location + " "
+                    : props.resultDetails.type === ResultType.Message
+                    ? "#" + props.resultDetails.location + " "
+                    : props.resultDetails.location}{" "}
                 </span>
               </span>
               {props.resultDetails.type !== ResultType.Message && (
-                <span className="ml-1 flex flex-row items-center font-dm-sans">
+                <span className="ml-1 flex flex-row items-center font-dm-sans max-w-[25%]">
                   <Img
                     alt="author"
                     className="inline-block ml-[6px] mr-2 h-4 rounded-xl"
@@ -202,7 +204,7 @@ export const SearchResult = (props: SearchResultProps) => {
               {props.resultDetails.child === null &&
                 props.resultDetails.type !== ResultType.Message &&
                 DateSpan(props)}
-              <span className="flex flex-row items-center">
+              <span className="flex flex-row items-center max-w-[25%]">
                 &thinsp; |&thinsp;
                 <img
                   alt="file-type"
@@ -329,7 +331,7 @@ function isOpenStatus(props: SearchResultProps) {
 function DateSpan(props: SearchResultProps) {
   const time = getFormattedDate(props.resultDetails.time);
   return (
-    <span className="flex flex-row items-center ml-1">
+    <span className="flex flex-row items-center ml-1 max-w-[25%]">
       <Img
         alt="author"
         className="inline-block ml-[6px] mr-1 h-4"

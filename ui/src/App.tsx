@@ -962,10 +962,14 @@ export default class App extends React.Component<{}, AppState> {
         ) : this.state.authed === false ? (
           <div className="w-[100vw] z-10 filter min-h-screen bg-white flex flex-col items-center py-[80px] px-[100px] gap-[80px]">
             <div className=" flex flex-col items-center justify-center gap-[10px]">
-              <img alt="Precept Logo" src={PreceptLogo} className="w-20 h-20" />
+              <img
+                alt="Precept Logo"
+                src={PreceptLogo}
+                className="w-[128px] h-[128px]"
+              />
               <h1
                 className={
-                  " text-[#000] block font-dm-sans text-4xl text-center"
+                  " text-[#000] block font-dm-sans text-3xl text-center"
                 }
               >
                 Precept
@@ -1023,7 +1027,7 @@ export default class App extends React.Component<{}, AppState> {
             {/* front search page*/}
             {!this.state.showResultsPage && (
               <div className="relative flex flex-col items-center top-10 mx-auto w-full">
-                <h1 className="flex flex-col items-center text-4xl text-center text-white m-10">
+                <h1 className="flex flex-col items-center gap-[10px] text-3xl text-center text-white m-10">
                   {/* <GiSocks
                   className={
                     "text-7xl text-center mt-4 mr-7" + this.getSocksColor()
@@ -1032,7 +1036,7 @@ export default class App extends React.Component<{}, AppState> {
                   <img
                     alt="Precept Logo"
                     src={PreceptLogo}
-                    className="w-20 h-20"
+                    className="w-[128px] h-[128px]"
                   />
                   <span
                     className={
