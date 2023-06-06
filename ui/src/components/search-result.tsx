@@ -93,7 +93,7 @@ export const SearchResult = (props: SearchResultProps) => {
             <span className={"w-[1px] mt-2 h-[85%] bg-[#66548D]"}></span>
           )}
         </span>
-        <p className="w-full p-[20px] pt-0 ml-1 text-[#A3A3A3] text-sm font-dm-sans">
+        <p className="w-full px-[20px] pt-0 ml-1 text-[#A3A3A3] text-sm font-dm-sans">
           {props.resultDetails.type !== ResultType.Comment &&
             props.resultDetails.score < 40 && (
               <span className="text-sm font-dm-sans font-bold text-red-600">
@@ -161,7 +161,11 @@ export const SearchResult = (props: SearchResultProps) => {
               )}
           </div>
           {props.resultDetails.type !== ResultType.Comment && (
-            <span className="flex flex-row text-[16px] mb-4 mt-[6px] font-dm-sans text-[#0D7E97]">
+            <span
+              className={`flex flex-row text-[16px] mt-[6px] font-dm-sans text-[#0D7E97] ${
+                props.resultDetails.content.length > 0 ? "mb-4" : ""
+              }`}
+            >
               <span className="flex flex-row items-center leading-[17px] px-[6px] py-[3px] bg-[#0D7E97] rounded-[5px] ml-0 text-[#fff]">
                 {props.resultDetails.type === ResultType.Docment && (
                   <img
@@ -211,7 +215,7 @@ export const SearchResult = (props: SearchResultProps) => {
               </span>
             </span>
           )}
-          {
+          {props.resultDetails.content.length > 0 && (
             <span className="line-clamp-2">
               {/* {props.resultDetails.content.map((text_part, index) => {
                 return (
@@ -255,7 +259,7 @@ export const SearchResult = (props: SearchResultProps) => {
                 </span>
               )}
             </span>
-          }
+          )}
         </p>
         <button
           onClick={
