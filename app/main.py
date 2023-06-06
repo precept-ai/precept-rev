@@ -25,6 +25,7 @@ from schemas.document import Document
 from schemas.paragraph import Paragraph
 from workers import Workers
 from telemetry import Posthog
+from datetime import timezone
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s | %(levelname)s | %(filename)s:%(lineno)d | %(message)s')
@@ -63,9 +64,21 @@ def _check_for_new_documents(force=False):
         data_sources: List[DataSource] = session.query(DataSource).all()
         for data_source in data_sources:
             # data source should be checked once every hour
-            if (get_utc_time_now() - data_source.last_indexed_at).total_seconds() <= 60 * 60 and not force:
+            # all datetimes here are in UTC
+            now = get_utc_time_now()
+            # set tzinfo of last_indexed_at to UTC
+            last_indexed_at = data_source.last_indexed_at.replace(tzinfo=timezone.utc)     
+            # print what timezone last_indexed_at is in
+
+            print(last_indexed_at, last_indexed_at.tzinfo)
+            print(now, now.tzinfo)
+            seconds_since_index = (now - last_indexed_at).total_seconds()
+            logger.info(f'seconds_since_index: {seconds_since_index}')
+            if seconds_since_index <= 60*60 and not force: # 60 * 60 and not force:
+                logger.info(f'skipping reindex')
                 continue
 
+            logger.info('-' * 100)
             logger.info(f"Checking for new docs in {data_source.type.name} (id: {data_source.id})")
             data_source_instance = DataSourceContext.get_data_source_instance(data_source_id=data_source.id)
             data_source_instance._last_index_time = data_source.last_indexed_at
@@ -73,7 +86,7 @@ def _check_for_new_documents(force=False):
 
 
 @app.on_event("startup")
-@repeat_every(seconds=60)
+@repeat_every(seconds=60)   # 60 
 def check_for_new_documents():
     _check_for_new_documents(force=False)
 
