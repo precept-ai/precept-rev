@@ -1074,7 +1074,14 @@ export default class App extends React.Component<{}, AppState> {
                     this.state.dataSourceTypesDict[result.data_source] ? (
                       <SearchResult
                         key={index}
-                        resultDetails={{ ...result, score: 80, content: [] }}
+                        resultDetails={{
+                          ...result,
+                          score: 80,
+                          content:
+                            result.data_source === "slack"
+                              ? [result.content[0]]
+                              : [],
+                        }}
                         dataSourceType={
                           this.state.dataSourceTypesDict[result.data_source]
                         }
