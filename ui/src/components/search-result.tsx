@@ -14,6 +14,8 @@ import { RiGitRepositoryLine } from "react-icons/ri";
 import { GoAlert } from "react-icons/go";
 import { MdVerified } from "react-icons/md";
 
+import { Firestore } from "firebase/firestore";
+
 export interface TextPart {
   content: string;
   bold: boolean;
@@ -59,9 +61,18 @@ export interface SearchResultProps {
   dataSourceType: DataSourceType;
   openModal?: (result: SearchResultDetails) => void;
   closeModal?: () => void;
+  addRecentDoc?: (docToAdd: SearchResultDetails) => Promise<void>;
+  db: Firestore;
 }
 
 export const SearchResult = (props: SearchResultProps) => {
+  const handleOpenClick = async () => {
+    // Add the document to the recent documents list
+    if (props.addRecentDoc) {
+      await props.addRecentDoc(props.resultDetails);
+      window.open(props.resultDetails.url, "_blank");
+    }
+  };
   return (
     <div
       className={
@@ -70,7 +81,7 @@ export const SearchResult = (props: SearchResultProps) => {
       onClick={
         props.openModal
           ? props.resultDetails.data_source === "slack"
-            ? () => window.open(props.resultDetails.url, "_blank")
+            ? () => handleOpenClick()
             : () => props.openModal(props.resultDetails)
           : () => {}
       }
@@ -82,7 +93,7 @@ export const SearchResult = (props: SearchResultProps) => {
             <span className={"w-[1px] mt-2 h-[85%] bg-[#66548D]"}></span>
           )}
         </span>
-        <p className="w-full p-[20px] pt-0 ml-1 text-[#A3A3A3] text-sm font-dm-sans">
+        <p className="w-full px-[20px] pt-0 ml-1 text-[#A3A3A3] text-sm font-dm-sans overflow-hidden">
           {props.resultDetails.type !== ResultType.Comment &&
             props.resultDetails.score < 40 && (
               <span className="text-sm font-dm-sans font-bold text-red-600">
@@ -101,14 +112,12 @@ export const SearchResult = (props: SearchResultProps) => {
                 ISSUE
               </span>
             )}
-            <a
+            <button
+              onClick={() => handleOpenClick()}
               className="text-[24px] overflow-hidden overflow-ellipsis whitespace-nowrap text-[#0D7E97] text-xl font-dm-sans font-medium hover:underline hover:cursor-pointer"
-              href={props.resultDetails.url}
-              rel="noreferrer"
-              target="_blank"
             >
               {props.resultDetails.title}
-            </a>
+            </button>
             {props.resultDetails.type === ResultType.Comment && (
               <span className="flex flex-row items-center justify-center ml-2 mt-[5px] font-dm-sans">
                 Commented {getDaysAgo(props.resultDetails.time)}
@@ -152,8 +161,12 @@ export const SearchResult = (props: SearchResultProps) => {
               )}
           </div>
           {props.resultDetails.type !== ResultType.Comment && (
-            <span className="flex flex-row text-[16px] mb-4 mt-[6px] font-dm-sans text-[#0D7E97]">
-              <span className="flex flex-row items-center leading-[17px] px-[6px] py-[3px] bg-[#0D7E97] rounded-[5px] ml-0 text-[#fff]">
+            <span
+              className={`flex flex-row text-[16px] mt-[6px] font-dm-sans text-[#0D7E97] w-full ${
+                props.resultDetails.content.length > 0 ? "mb-4" : ""
+              }`}
+            >
+              <span className="flex flex-row items-center leading-[17px] px-[6px] py-[3px] bg-[#0D7E97] rounded-[5px] ml-0 text-[#fff] max-w-[25%]">
                 {props.resultDetails.type === ResultType.Docment && (
                   <img
                     alt="purple-folder"
@@ -164,14 +177,16 @@ export const SearchResult = (props: SearchResultProps) => {
                 {props.resultDetails.type === ResultType.Issue && (
                   <RiGitRepositoryLine className="h-[14px] mt-[1px] mr-[2px]"></RiGitRepositoryLine>
                 )}
-                <span className="text-[15x] font-dm-sans">
-                  {props.resultDetails.type === ResultType.Docment && " / "}
-                  {props.resultDetails.type === ResultType.Message && "#"}
-                  {props.resultDetails.location}{" "}
+                <span className="text-[15x] font-dm-sans line-clamp-1">
+                  {props.resultDetails.type === ResultType.Docment
+                    ? " /" + props.resultDetails.location + " "
+                    : props.resultDetails.type === ResultType.Message
+                    ? "#" + props.resultDetails.location + " "
+                    : props.resultDetails.location}{" "}
                 </span>
               </span>
               {props.resultDetails.type !== ResultType.Message && (
-                <span className="ml-1 flex flex-row items-center font-dm-sans">
+                <span className="ml-1 flex flex-row items-center font-dm-sans max-w-[25%]">
                   <Img
                     alt="author"
                     className="inline-block ml-[6px] mr-2 h-4 rounded-xl"
@@ -189,7 +204,7 @@ export const SearchResult = (props: SearchResultProps) => {
               {props.resultDetails.child === null &&
                 props.resultDetails.type !== ResultType.Message &&
                 DateSpan(props)}
-              <span className="flex flex-row items-center">
+              <span className="flex flex-row items-center max-w-[25%]">
                 &thinsp; |&thinsp;
                 <img
                   alt="file-type"
@@ -202,8 +217,8 @@ export const SearchResult = (props: SearchResultProps) => {
               </span>
             </span>
           )}
-          {
-            <span>
+          {props.resultDetails.content.length > 0 && (
+            <span className="line-clamp-2">
               {/* {props.resultDetails.content.map((text_part, index) => {
                 return (
                   <>
@@ -246,13 +261,13 @@ export const SearchResult = (props: SearchResultProps) => {
                 </span>
               )}
             </span>
-          }
+          )}
         </p>
         <button
           onClick={
             props.openModal
               ? props.resultDetails.data_source === "slack"
-                ? () => window.open(props.resultDetails.url, "_blank")
+                ? () => handleOpenClick()
                 : () => props.openModal(props.resultDetails)
               : () => {}
           }
@@ -316,7 +331,7 @@ function isOpenStatus(props: SearchResultProps) {
 function DateSpan(props: SearchResultProps) {
   const time = getFormattedDate(props.resultDetails.time);
   return (
-    <span className="flex flex-row items-center ml-1">
+    <span className="flex flex-row items-center ml-1 max-w-[25%]">
       <Img
         alt="author"
         className="inline-block ml-[6px] mr-1 h-4"
@@ -414,7 +429,10 @@ export function getBigIcon(props: SearchResultProps) {
           height={"45px"}
           width={"45px"}
           // className={containingClasses}
-          className={"company-logo p-[3px] h-[24px] w-[24px] absolute -right-[5px] -bottom-[5px] bg-white" + containingClasses}
+          className={
+            "company-logo p-[3px] h-[24px] w-[24px] absolute -right-[5px] -bottom-[5px] bg-white" +
+            containingClasses
+          }
           alt="file-type"
           src={[containingImage, DefaultUserImage]}
         />

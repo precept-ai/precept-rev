@@ -27,9 +27,17 @@ import {
   signInWithPopup,
   signOut,
 } from "firebase/auth";
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  getDoc,
+  updateDoc,
+} from "firebase/firestore";
 import { firebaseConfig } from "./components/firebase-config";
 
 import GoogleLoginButton from "./assets/images/google-login.png";
+import MicrosoftLoginButton from "./assets/images/microsoft-login.png";
 
 import "./assets/css/App.css";
 import SkeletonLoader from "./components/skeleton-loader";
@@ -39,6 +47,7 @@ import {
   ResultType,
   SearchResult,
   SearchResultDetails,
+  getBigIcon,
 } from "./components/search-result";
 import { ResultModal } from "./components/result-modal";
 import { addToSearchHistory } from "./autocomplete";
@@ -61,6 +70,7 @@ import ProgressBar from "@ramonak/react-progress-bar";
 export interface AppState {
   authed: boolean | "loading";
   user: User | null;
+  userDoc: UserDoc | null;
   query: string;
   results: SearchResultDetails[];
   searchDuration: number;
@@ -98,6 +108,12 @@ export interface ServerStatus {
   docs_indexed: number;
 }
 
+export interface UserDoc {
+  name: string;
+  email: string;
+  recentDocs: SearchResultDetails[];
+}
+
 Modal.setAppElement("#root");
 
 const modalCustomStyles = {
@@ -129,6 +145,7 @@ const languages = ["🇫🇷 FR", "🇩🇪 DE", "🇪🇸 ES", "🇮🇹 IT", "
 // ADDED - Firebase App
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
+const db = getFirestore(app);
 const auth = getAuth(app);
 const googleAuthProvier = new GoogleAuthProvider();
 
@@ -138,6 +155,7 @@ export default class App extends React.Component<{}, AppState> {
     this.state = {
       authed: "loading",
       user: null,
+      userDoc: null,
       query: "",
       results: [], // CHANGED!!
       dataSourceTypes: [],
@@ -203,15 +221,43 @@ export default class App extends React.Component<{}, AppState> {
 
     this.openModal = this.openModal.bind(this);
     this.closeModal = this.closeModal.bind(this);
+    this.handleAddDoc = this.handleAddDoc.bind(this);
+    this.handleLoginWithGoogle = this.handleLoginWithGoogle.bind(this);
+    this.handleSignOut = this.handleSignOut.bind(this);
   }
 
   componentDidMount() {
     // ADDED - Firebase Auth
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
       if (user) {
         this.setState({ authed: true, user: user });
+        const docRef = doc(db, "users", user.uid);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          console.log("Docsnap exists");
+          const userDoc = docSnap.data() as UserDoc;
+          console.log(userDoc);
+          this.setState({ authed: true, user: user, userDoc: userDoc });
+        } else {
+          // docSnap.data() will be undefined in this case
+          await setDoc(doc(db, "users", user.uid), {
+            name: user.displayName,
+            email: user.email,
+            recentDocs: [],
+          });
+          this.setState({
+            authed: true,
+            user: user,
+            userDoc: {
+              name: user.displayName || "",
+              email: user.email || "",
+              recentDocs: [],
+            },
+          });
+        }
       } else {
-        this.setState({ authed: false, user: null });
+        this.setState({ authed: false, user: null, userDoc: null });
       }
     });
 
@@ -246,7 +292,7 @@ export default class App extends React.Component<{}, AppState> {
 
   handleLoginWithGoogle() {
     signInWithPopup(auth, googleAuthProvier)
-      .then((result) => {
+      .then(async (result) => {
         // This gives you a Google Access Token. You can use it to access the Google API.
         const credential = GoogleAuthProvider.credentialFromResult(result);
         if (credential) {
@@ -255,17 +301,43 @@ export default class App extends React.Component<{}, AppState> {
           const user = result.user;
           // IdP data available using getAdditionalUserInfo(result)
           // ...
-          this.setState({ authed: true, user: user });
+          const docRef = doc(db, "users", user.uid);
+          const docSnap = await getDoc(docRef);
+
+          if (docSnap.exists()) {
+            console.log("Docsnap exists");
+            const userDoc = docSnap.data() as UserDoc;
+            console.log(userDoc);
+            this.setState({ authed: true, user: user, userDoc: userDoc });
+          } else {
+            // docSnap.data() will be undefined in this case
+            await setDoc(doc(db, "users", user.uid), {
+              name: user.displayName,
+              email: user.email,
+              recentDocs: [],
+            });
+            this.setState({
+              authed: true,
+              user: user,
+              userDoc: {
+                name: user.displayName || "",
+                email: user.email || "",
+                recentDocs: [],
+              },
+            });
+          }
         }
       })
       .catch((error) => {
         // Handle Errors here.
         const errorCode = error.code;
         const errorMessage = error.message;
-        // The email of the user's account used.
-        const email = error.customData.email;
-        // The AuthCredential type that was used.
-        const credential = GoogleAuthProvider.credentialFromError(error);
+        // // The email of the user's account used.
+        // const email = error.customData.email;
+        // // The AuthCredential type that was used.
+        // const credential = GoogleAuthProvider.credentialFromError(error);
+        console.log(error);
+        console.log(errorCode);
         // ...
       });
   }
@@ -282,6 +354,52 @@ export default class App extends React.Component<{}, AppState> {
       });
   }
 
+  async fetchRecentDocs() {
+    if (!this.state.user) {
+      return;
+    }
+    const docRef = doc(db, "users", this.state.user.uid);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      const userDoc = docSnap.data() as UserDoc;
+      this.setState({ userDoc: userDoc });
+    } else {
+    }
+  }
+
+  async handleAddDoc(docToAdd: SearchResultDetails) {
+    if (!this.state.user) {
+      return;
+    }
+    const docRef = doc(db, "users", this.state.user.uid);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      const userDoc = docSnap.data() as UserDoc;
+      const recentDocs = userDoc.recentDocs;
+      const found = recentDocs.find(
+        (recentDoc) =>
+          recentDoc.title === docToAdd.title &&
+          recentDoc.type === docToAdd.type &&
+          recentDoc.author === docToAdd.author &&
+          recentDoc.data_source === docToAdd.data_source
+      );
+      if (!found) {
+        recentDocs.unshift(docToAdd);
+      } else {
+        recentDocs.splice(recentDocs.indexOf(found), 1);
+        recentDocs.unshift(found);
+      }
+      if (recentDocs.length > 5) {
+        recentDocs.pop();
+      }
+      await updateDoc(doc(db, "users", this.state.user.uid), {
+        recentDocs: recentDocs,
+      });
+      this.setState({ userDoc: { ...userDoc, recentDocs: recentDocs } });
+    } else {
+    }
+  }
+
   handleSearch() {
     const path = window.location.pathname;
     const query = new URLSearchParams(window.location.search).get("query");
@@ -294,7 +412,6 @@ export default class App extends React.Component<{}, AppState> {
   async listDataSourceTypes() {
     try {
       const response = await api.get<DataSourceType[]>("/data-sources/types");
-      console.log(response.data);
       const filteredResponse = response.data.filter(
         (response) =>
           response.name === "google_drive" || response.name === "slack"
@@ -552,7 +669,17 @@ export default class App extends React.Component<{}, AppState> {
           newArray.push(result);
         }
       }
-      // Otherwise, it is not from GDrive, so we just push it to the result array
+      // Otherwise, it is not from GDrive, so check if it is from Slack
+      else if (result.data_source === "slack") {
+        // If it is from Slack, separate the first text part and the second text part
+        const newSlackResults: SearchResultDetails[] = [
+          { ...result, content: [result.content[0]] },
+          { ...result, content: [result.content[1]], score: result.score - 5 },
+        ];
+        newArray.push(newSlackResults[0]);
+        newArray.push(newSlackResults[1]);
+      }
+      // Otherwise it is not from GDrive or Slack, so we just push it to the result array
       else {
         newArray.push(result);
       }
@@ -835,26 +962,39 @@ export default class App extends React.Component<{}, AppState> {
         ) : this.state.authed === false ? (
           <div className="w-[100vw] z-10 filter min-h-screen bg-white flex flex-col items-center py-[80px] px-[100px] gap-[80px]">
             <div className=" flex flex-col items-center justify-center gap-[10px]">
-              <img alt="Precept Logo" src={PreceptLogo} className="w-20 h-20" />
+              <img
+                alt="Precept Logo"
+                src={PreceptLogo}
+                className="w-[128px] h-[128px]"
+              />
               <h1
                 className={
-                  " text-[#000] block font-dm-sans text-4xl text-center"
+                  " text-[#000] block font-dm-sans text-3xl text-center"
                 }
               >
                 Precept
               </h1>
             </div>
             <h2 className="font-dm-sans font-bold text-5xl">Login</h2>
-            <button
-              onClick={this.handleLoginWithGoogle}
-              className="cursor-pointer"
-            >
-              <img
-                className="h-[55px] w-auto"
-                src={GoogleLoginButton}
-                alt="Login with Google"
-              />
-            </button>
+            <div className="flex gap-[40px]">
+              <button onClick={() => {}} className="cursor-pointer">
+                <img
+                  className="h-[55px] w-auto"
+                  src={MicrosoftLoginButton}
+                  alt="Login with Microsoft"
+                />
+              </button>
+              <button
+                onClick={this.handleLoginWithGoogle}
+                className="cursor-pointer"
+              >
+                <img
+                  className="h-[55px] w-auto shadow-[0_2px_4px_rgba(0,0,0,0.25)]"
+                  src={GoogleLoginButton}
+                  alt="Login with Google"
+                />
+              </button>
+            </div>
           </div>
         ) : (
           <div
@@ -887,7 +1027,7 @@ export default class App extends React.Component<{}, AppState> {
             {/* front search page*/}
             {!this.state.showResultsPage && (
               <div className="relative flex flex-col items-center top-10 mx-auto w-full">
-                <h1 className="flex flex-col items-center text-4xl text-center text-white m-10">
+                <h1 className="flex flex-col items-center gap-[10px] text-3xl text-center text-white m-10">
                   {/* <GiSocks
                   className={
                     "text-7xl text-center mt-4 mr-7" + this.getSocksColor()
@@ -896,7 +1036,7 @@ export default class App extends React.Component<{}, AppState> {
                   <img
                     alt="Precept Logo"
                     src={PreceptLogo}
-                    className="w-20 h-20"
+                    className="w-[128px] h-[128px]"
                   />
                   <span
                     className={
@@ -928,6 +1068,27 @@ export default class App extends React.Component<{}, AppState> {
                   </span>
                   <img alt="enter" className="ml-2" src={EnterImage}></img>
                 </button>
+
+                <div className="w-[80%] flex flex-col gap-[20px] px-[120px] py-[40px]">
+                  <h2>Recent docs</h2>
+                  {this.state.userDoc?.recentDocs.map((result, index) =>
+                    this.state.dataSourceTypesDict[result.data_source] ? (
+                      <SearchResult
+                        key={index}
+                        resultDetails={{ ...result, score: 80, content: [] }}
+                        dataSourceType={
+                          this.state.dataSourceTypesDict[result.data_source]
+                        }
+                        openModal={this.openResultModal}
+                        closeModal={this.closeResultModal}
+                        addRecentDoc={this.handleAddDoc}
+                        db={db}
+                      />
+                    ) : (
+                      <SkeletonLoader />
+                    )
+                  )}
+                </div>
               </div>
             )}
 
@@ -1002,6 +1163,8 @@ export default class App extends React.Component<{}, AppState> {
                               }
                               openModal={this.openResultModal}
                               closeModal={this.closeResultModal}
+                              addRecentDoc={this.handleAddDoc}
+                              db={db}
                             />
                           );
                         }
@@ -1017,6 +1180,8 @@ export default class App extends React.Component<{}, AppState> {
                         ]
                       }
                       closeModal={this.closeResultModal}
+                      addRecentDoc={this.handleAddDoc}
+                      db={db}
                     />
                   )}
                 </div>
