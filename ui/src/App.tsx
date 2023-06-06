@@ -37,6 +37,7 @@ import {
 import { firebaseConfig } from "./components/firebase-config";
 
 import GoogleLoginButton from "./assets/images/google-login.png";
+import MicrosoftLoginButton from "./assets/images/microsoft-login.png";
 
 import "./assets/css/App.css";
 import SkeletonLoader from "./components/skeleton-loader";
@@ -971,16 +972,25 @@ export default class App extends React.Component<{}, AppState> {
               </h1>
             </div>
             <h2 className="font-dm-sans font-bold text-5xl">Login</h2>
-            <button
-              onClick={this.handleLoginWithGoogle}
-              className="cursor-pointer"
-            >
-              <img
-                className="h-[55px] w-auto"
-                src={GoogleLoginButton}
-                alt="Login with Google"
-              />
-            </button>
+            <div className="flex gap-[40px]">
+              <button onClick={() => {}} className="cursor-pointer">
+                <img
+                  className="h-[55px] w-auto"
+                  src={MicrosoftLoginButton}
+                  alt="Login with Microsoft"
+                />
+              </button>
+              <button
+                onClick={this.handleLoginWithGoogle}
+                className="cursor-pointer"
+              >
+                <img
+                  className="h-[55px] w-auto shadow-[0_2px_4px_rgba(0,0,0,0.25)]"
+                  src={GoogleLoginButton}
+                  alt="Login with Google"
+                />
+              </button>
+            </div>
           </div>
         ) : (
           <div
