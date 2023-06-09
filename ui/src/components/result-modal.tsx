@@ -219,96 +219,102 @@ export const ResultModal = (props: ResultModalProps) => {
                 </div>
               </div>
               <div className="w-full h-full overflow-y-scroll flex flex-col gap-[20px]">
-                {slackMessages.messages.map((message, index) => (!message.subtype || message.subtype !== "channel_join") && (
-                  <div
-                    key={index}
-                    className={
-                      "w-full flex flex-row items-start p-[10px] gap-[2px] " +
-                      (matchedMessage && matchedMessage.ts === message.ts
-                        ? "bg-[rgba(13,126,151,0.12)] font-bold"
-                        : "")
-                    }
-                    ref={
-                      matchedMessage && matchedMessage.ts === message.ts
-                        ? matchedMessageRef
-                        : null
-                    }
-                  >
-                    <div className="flex flex-row gap-[10px]">
-                      {message.user.image_48 && (
-                        <img
-                          src={message.user.image_48}
-                          alt={message.user.display_name}
-                          className="w-[48px] h-[48px] rounded-[10px]"
-                        />
-                      )}
-                    </div>
-                    <div className="w-full flex flex-col items-start px-[10px] gap-[4px]">
-                      {message.user.display_name ? (
-                        <span className="text-md font-dm-sans font-bold">
-                          {message.user.display_name}
-                        </span>
-                      ) : (
-                        <span className="text-md font-dm-sans font-bold">
-                          {message.user.first_name}
-                        </span>
-                      )}
-                      {message.text &&
-                        (!message.subtype ||
-                          message.subtype !== "channel_join") && (
-                          <span className={"text-md font-dm-sans font-regular"}>
-                            {message.text}
-                          </span>
-                        )}
-                      {message.files &&
-                        message.files.map((file, index) => (
-                          <div
-                            key={index}
-                            className="w-full h-full min-w-[150px] max-w-[300px] flex flex-col items-start p-[24px] gap-[24px] rounded-[10px] border-[1px] border-[rgba(0,0,0,0.1)]"
-                          >
-                            <div className="flex flex-row items-end gap-[10px]">
-                              {file.mimetype && (
-                                <img
-                                  src={
-                                    file.mimetype === "application/pdf"
-                                      ? Pdf
-                                      : file.mimetype ===
-                                        "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-                                      ? Pptx
-                                      : ""
+                {slackMessages.messages.map(
+                  (message, index) =>
+                    (!message.subtype ||
+                      message.subtype !== "channel_join") && (
+                      <div
+                        key={index}
+                        className={
+                          "w-full flex flex-row items-start p-[10px] gap-[2px] " +
+                          (matchedMessage && matchedMessage.ts === message.ts
+                            ? "bg-[rgba(13,126,151,0.12)] font-bold"
+                            : "")
+                        }
+                        ref={
+                          matchedMessage && matchedMessage.ts === message.ts
+                            ? matchedMessageRef
+                            : null
+                        }
+                      >
+                        <div className="flex flex-row gap-[10px]">
+                          {message.user.image_48 && (
+                            <img
+                              src={message.user.image_48}
+                              alt={message.user.display_name}
+                              className="w-[48px] h-[48px] rounded-[10px]"
+                            />
+                          )}
+                        </div>
+                        <div className="w-full flex flex-col items-start px-[10px] gap-[4px]">
+                          {message.user.display_name ? (
+                            <span className="text-md font-dm-sans font-bold">
+                              {message.user.display_name}
+                            </span>
+                          ) : (
+                            <span className="text-md font-dm-sans font-bold">
+                              {message.user.first_name}
+                            </span>
+                          )}
+                          {message.text &&
+                            (!message.subtype ||
+                              message.subtype !== "channel_join") && (
+                              <span
+                                className={"text-md font-dm-sans font-regular"}
+                              >
+                                {message.text}
+                              </span>
+                            )}
+                          {message.files &&
+                            message.files.map((file, index) => (
+                              <div
+                                key={index}
+                                className="w-full h-full min-w-[150px] max-w-[300px] flex flex-col items-start p-[24px] gap-[24px] rounded-[10px] border-[1px] border-[rgba(0,0,0,0.1)]"
+                              >
+                                <div className="flex flex-row items-end gap-[10px]">
+                                  {file.mimetype && (
+                                    <img
+                                      src={
+                                        file.mimetype === "application/pdf"
+                                          ? Pdf
+                                          : file.mimetype ===
+                                            "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                                          ? Pptx
+                                          : ""
+                                      }
+                                      alt={file.name}
+                                      className="h-[48px] w-[48px]"
+                                    />
+                                  )}
+                                  <div className="flex flex-col gap-[2px]">
+                                    <span
+                                      className={
+                                        "text-md font-dm-sans font-bold line-clamp-1"
+                                      }
+                                    >
+                                      {file.name}
+                                    </span>
+                                    {file.filetype && (
+                                      <span className="line-clamp-1">
+                                        {file.filetype.toUpperCase()}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={() =>
+                                    handleOpenClick(props.result.url)
                                   }
-                                  alt={file.name}
-                                  className="h-[48px] w-[48px]"
-                                />
-                              )}
-                              <div className="flex flex-col gap-[2px]">
-                                <span
-                                  className={
-                                    "text-md font-dm-sans font-bold line-clamp-1"
-                                  }
+                                  className="w-full h-[45px] bg-[rgba(0,0,0,0.04)] text-black font-dm-sans font-bold rounded-[10px] cursor-pointer border-none outline-none hover:bg-[rgba(13,126,151,0.12)] hover:text-[#0d7e97]"
                                 >
-                                  {file.name}
-                                </span>
-                                {file.filetype && (
-                                  <span className="line-clamp-1">
-                                    {file.filetype.toUpperCase()}
-                                  </span>
-                                )}
+                                  Open in Slack
+                                </button>
                               </div>
-                            </div>
-                            <button
-                              onClick={() =>
-                                handleOpenClick(file.url_private_download)
-                              }
-                              className="w-full h-[45px] bg-[rgba(0,0,0,0.04)] text-black font-dm-sans font-bold rounded-[10px] cursor-pointer border-none outline-none hover:bg-[rgba(13,126,151,0.12)] hover:text-[#0d7e97]"
-                            >
-                              Open in Slack
-                            </button>
-                          </div>
-                        ))}
-                    </div>
-                  </div>
-                ))}
+                            ))}
+                        </div>
+                      </div>
+                    )
+                )}
               </div>
             </div>
           ) : (
