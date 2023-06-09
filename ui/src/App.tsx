@@ -1113,98 +1113,72 @@ export default class App extends React.Component<{}, AppState> {
 
             {/* results page */}
             {this.state.showResultsPage && (
-              <div className="relative flex flex-row w-full bg-white min-h-full">
-                {/* <div className="fixed h-screen w-[100px] bg-[#e5e5e5] flex flex-col items-center px-[20px] py-[40px] gap-[40px]">
-                  <button onClick={this.goHomePage} className="cursor-pointer">
-                    <img
-                      src={PreceptLogo}
-                      alt="Precept Logo"
-                      className="w-[48px] h-auto"
-                    />
-                  </button>
-                  <button onClick={this.goHomePage} className="cursor-pointer">
-                    <SearchIcon />
-                  </button>
-                  <button onClick={this.openModal} className="cursor-pointer">
-                    <DataIcon />
-                  </button>
-                  <button onClick={this.goHomePage} className="cursor-pointer">
-                    <ProfileIcon />
-                  </button>
-                </div> */}
-
-                {/* <span className="flex flex-row items-start text-3xl text-center text-white m-10 mx-7 mt-0">
-                  <span className="text-[#0D7E97]	block font-dm-sans md:leading-normal bg-clip-text bg-gradient-to-l">
-                    Precept
-                  </span>
-                </span> */}
-                <div className="flex flex-col items-center w-full pl-[100px]">
-                  <div className="w-full flex justify-center items-center py-[20px] bg-[rgba(0,0,0,0.04)] shadow-[0_2px_8px_rgba(0,0,0,0.12)]">
-                    <SearchBar
-                      widthPercentage={40}
-                      isDisabled={this.state.isServerDown}
-                      query={this.state.query}
-                      isLoading={this.state.isLoading}
-                      showReset={this.state.results.length > 0}
-                      onSearch={this.goSearchPage}
-                      onQueryChange={this.handleQueryChange}
-                      onClear={this.clear}
-                      showSuggestions={true}
-                    />
-                  </div>
-                  {this.state.isLoading && (
-                    <div className="w-full flex flex-col gap-[20px] px-[20px] py-[80px]">
-                      <SkeletonLoader />
-                      <SkeletonLoader />
-                    </div>
-                  )}
-                  {!this.state.isLoading && (
-                    <span className="text-[#D2D2D2] font-dm-sans font-medium text-base leading-[22px] mt-3">
-                      {this.bundleSearchResults(this.state.results).length}{" "}
-                      {this.bundleSearchResults(this.state.results).length > 1
-                        ? "Results"
-                        : "Result"}{" "}
-                      ({this.state.searchDuration} seconds)
-                    </span>
-                  )}
-                  {this.state.dataSourceTypes.length > 0 && (
-                    <div className="w-full flex flex-col gap-[20px] px-[20px] py-[40px]">
-                      {this.bundleSearchResults(this.state.results).map(
-                        (result, index) => {
-                          return (
-                            <SearchResult
-                              key={index}
-                              resultDetails={result}
-                              dataSourceType={
-                                this.state.dataSourceTypesDict[
-                                  result.data_source
-                                ]
-                              }
-                              openModal={this.openResultModal}
-                              closeModal={this.closeResultModal}
-                              addRecentDoc={this.handleAddDoc}
-                              db={db}
-                            />
-                          );
-                        }
-                      )}
-                    </div>
-                  )}
-                  {this.state.showResultModal && this.state.aciveResult && (
-                    <ResultModal
-                      result={this.state.aciveResult}
-                      dataSourceType={
-                        this.state.dataSourceTypesDict[
-                          this.state.aciveResult.data_source
-                        ]
-                      }
-                      closeModal={this.closeResultModal}
-                      addRecentDoc={this.handleAddDoc}
-                      db={db}
-                    />
-                  )}
+              // <div className="relative flex flex-row w-full bg-white min-h-full">
+              <div className="flex flex-col items-center w-full h-full pl-[100px]">
+                <div className="w-full flex justify-center items-center py-[20px] bg-[rgba(0,0,0,0.04)] shadow-[0_2px_8px_rgba(0,0,0,0.12)]">
+                  <SearchBar
+                    widthPercentage={40}
+                    isDisabled={this.state.isServerDown}
+                    query={this.state.query}
+                    isLoading={this.state.isLoading}
+                    showReset={this.state.results.length > 0}
+                    onSearch={this.goSearchPage}
+                    onQueryChange={this.handleQueryChange}
+                    onClear={this.clear}
+                    showSuggestions={true}
+                  />
                 </div>
+                {this.state.isLoading && (
+                  <div className="w-full flex flex-col gap-[20px] px-[20px] py-[80px]">
+                    <SkeletonLoader />
+                    <SkeletonLoader />
+                  </div>
+                )}
+                {!this.state.isLoading && (
+                  <span className="text-[#D2D2D2] font-dm-sans font-medium text-base leading-[22px] mt-3">
+                    {this.bundleSearchResults(this.state.results).length}{" "}
+                    {this.bundleSearchResults(this.state.results).length > 1
+                      ? "Results"
+                      : "Result"}{" "}
+                    ({this.state.searchDuration} seconds)
+                  </span>
+                )}
+                {this.state.dataSourceTypes.length > 0 && (
+                  <div className="w-full flex flex-col gap-[20px] px-[20px] py-[40px]">
+                    {this.bundleSearchResults(this.state.results).map(
+                      (result, index) => {
+                        return (
+                          <SearchResult
+                            key={index}
+                            resultDetails={result}
+                            dataSourceType={
+                              this.state.dataSourceTypesDict[result.data_source]
+                            }
+                            openModal={this.openResultModal}
+                            closeModal={this.closeResultModal}
+                            addRecentDoc={this.handleAddDoc}
+                            db={db}
+                          />
+                        );
+                      }
+                    )}
+                  </div>
+                )}
+                {this.state.showResultModal && this.state.aciveResult && (
+                  <ResultModal
+                    result={this.state.aciveResult}
+                    dataSourceType={
+                      this.state.dataSourceTypesDict[
+                        this.state.aciveResult.data_source
+                      ]
+                    }
+                    closeModal={this.closeResultModal}
+                    addRecentDoc={this.handleAddDoc}
+                    db={db}
+                  />
+                )}
               </div>
+              // </div>
             )}
           </div>
         )}

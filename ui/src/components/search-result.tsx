@@ -81,8 +81,8 @@ export const SearchResult = (props: SearchResultProps) => {
       onClick={
         props.openModal
           ? props.resultDetails.data_source === "slack"
-            ? () => handleOpenClick()
-            : // () => props.openModal(props.resultDetails)
+            ? () => props.openModal(props.resultDetails)
+            : // () => handleOpenClick()
               () => props.openModal(props.resultDetails)
           : () => {}
       }
@@ -96,7 +96,7 @@ export const SearchResult = (props: SearchResultProps) => {
         </span>
         <p className="w-full px-[20px] pt-0 ml-1 text-[#A3A3A3] text-sm font-dm-sans overflow-hidden">
           {props.resultDetails.type !== ResultType.Comment &&
-            props.resultDetails.score < 40 && (
+            props.resultDetails.score < 30 && (
               <span className="text-sm font-dm-sans font-bold text-red-600">
                 Warning: low match
               </span>
@@ -117,8 +117,9 @@ export const SearchResult = (props: SearchResultProps) => {
               onClick={
                 props.openModal
                   ? props.resultDetails.data_source === "slack"
-                    ? () => {}
-                    : () => props.openModal(props.resultDetails)
+                    ? () => props.openModal(props.resultDetails)
+                    : // () => {}
+                      () => props.openModal(props.resultDetails)
                   : () => {}
               }
               className="text-[24px] overflow-hidden overflow-ellipsis whitespace-nowrap text-[#0D7E97] text-xl font-dm-sans font-medium hover:underline hover:cursor-pointer"
@@ -274,13 +275,13 @@ export const SearchResult = (props: SearchResultProps) => {
           onClick={
             props.openModal
               ? props.resultDetails.data_source === "slack"
-                ? () => {}
+                ? () => props.openModal(props.resultDetails)
                 : () => props.openModal(props.resultDetails)
               : () => {}
           }
           className="self-center w-[150px] h-[45px] bg-[rgba(0,0,0,0.04)] hover:bg-[rgba(13,126,151,0.12)] cursor-pointer font-black hover:font-[#0D7E97] font-dm-sans rounded-[10px] top-0 bottom-0"
         >
-          {props.resultDetails.data_source === "slack" ? "Open" : "Preview"}
+          {props.resultDetails.data_source === "slack" ? "Preview" : "Preview"}
         </button>
       </div>
       {props.resultDetails.child && (

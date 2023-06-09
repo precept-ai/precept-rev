@@ -23,6 +23,14 @@
 }
 
 @font-face {
+  font-family: "Larsseit";
+  font-weight: 700;
+  font-style: normal;
+  font-display: fallback;
+  src: url("../fonts/Larsseit-Bold.otf") format("opentype");
+}
+
+@font-face {
   font-family: "Poppins";
   font-weight: 500;
   font-style: normal;

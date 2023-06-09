@@ -8,6 +8,7 @@ module.exports = {
         poppins: ["DM Sans"],
         "source-sans-pro": ["DM Sans"],
         inter: ["DM Sans", "sans-serif"],
+        larsseit: ["Larsseit", "sans-serif"],
       },
     },
   },
