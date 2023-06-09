@@ -219,7 +219,7 @@ export const ResultModal = (props: ResultModalProps) => {
                 </div>
               </div>
               <div className="w-full h-full overflow-y-scroll flex flex-col gap-[20px]">
-                {slackMessages.messages.map((message, index) => (
+                {slackMessages.messages.map((message, index) => (!message.subtype || message.subtype !== "channel_join") && (
                   <div
                     key={index}
                     className={
