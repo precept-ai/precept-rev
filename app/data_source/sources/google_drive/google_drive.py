@@ -2,7 +2,7 @@ import io
 import json
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import lru_cache
 from typing import Dict, List
 
@@ -81,14 +81,17 @@ class GoogleDriveDataSource(BaseDataSource):
             return False
 
         last_modified = datetime.strptime(file['modifiedTime'], "%Y-%m-%dT%H:%M:%S.%f%z")
+        print('#'*100)
+        print(last_modified, last_modified.tzinfo)
+        print(self._last_index_time, self._last_index_time.tzinfo)
         # quick hack both last_modified and self._last_index_time are timezone aware     # TODO check this is the right way to do it
         # TODO this is not the right way to do this, both should be already UTC, just need to override one of them. 
         # NOTE look at main.py 
-        # last_modified = last_modified.astimezone()
-        # self._last_index_time = self._last_index_time.astimezone()
+        last_modified = last_modified.replace(tzinfo=timezone.utc)
+        self._last_index_time = self._last_index_time.replace(tzinfo=timezone.utc)
         
-        # if last_modified < self._last_index_time:
-        #     return False
+        if last_modified < self._last_index_time:
+            return False
 
         return True
 

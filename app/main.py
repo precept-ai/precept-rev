@@ -86,7 +86,7 @@ def _check_for_new_documents(force=False):
 
 
 @app.on_event("startup")
-@repeat_every(seconds=60)   # 60 
+@repeat_every(seconds=60)  
 def check_for_new_documents():
     _check_for_new_documents(force=False)
 
