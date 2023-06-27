@@ -13,8 +13,29 @@ import { ReactComponent as SearchIcon } from "./assets/images/search-icon.svg";
 import { ReactComponent as ProfileIcon } from "./assets/images/profile-icon.svg";
 import { ReactComponent as SettingsIcon } from "./assets/images/settings-icon.svg";
 import { ReactComponent as DataIcon } from "./assets/images/data-icon.svg";
+import { ReactComponent as LogoutIcon } from "./assets/images/logout-icon.svg";
 
-import { GiSocks } from "react-icons/gi";
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+import {
+  getAuth,
+  onAuthStateChanged,
+  GoogleAuthProvider,
+  User,
+  signInWithPopup,
+  signOut,
+} from "firebase/auth";
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  getDoc,
+  updateDoc,
+} from "firebase/firestore";
+import { firebaseConfig } from "./components/firebase-config";
+
+import GoogleLoginButton from "./assets/images/google-login.png";
+import MicrosoftLoginButton from "./assets/images/microsoft-login.png";
 
 import "./assets/css/App.css";
 import SkeletonLoader from "./components/skeleton-loader";
@@ -24,6 +45,7 @@ import {
   ResultType,
   SearchResult,
   SearchResultDetails,
+  getBigIcon,
 } from "./components/search-result";
 import { ResultModal } from "./components/result-modal";
 import { addToSearchHistory } from "./autocomplete";
@@ -42,8 +64,12 @@ import {
 } from "./data-source";
 import { IoMdArrowDropdown, IoMdClose } from "react-icons/io";
 import ProgressBar from "@ramonak/react-progress-bar";
+import AddOrganisation from "./components/add-organisation";
 
 export interface AppState {
+  authed: boolean | "loading";
+  user: User | null;
+  userDoc: UserDoc | null;
   query: string;
   results: SearchResultDetails[];
   searchDuration: number;
@@ -59,7 +85,6 @@ export interface AppState {
   isStartedFetching: boolean;
   isPreparingIndexing: boolean;
   isIndexing: boolean;
-  // didPassDiscord: boolean;
   discordCodeInput: string;
   docsLeftToIndex: number;
   docsInIndexing: number;
@@ -68,6 +93,7 @@ export interface AppState {
   serverDownCount: number;
   showResultsPage: boolean;
   showResultModal: boolean; // CHANGED - ADDED !!
+  showOrganisationsPage: boolean; // CHANGED - ADDED !!
   aciveResult: SearchResultDetails | null; // CHANGED - ADDED !!
   languageOpen: boolean;
   showNotReady: boolean;
@@ -79,6 +105,14 @@ export interface ServerStatus {
   docs_in_indexing: number;
   docs_left_to_index: number;
   docs_indexed: number;
+}
+
+export interface UserDoc {
+  name: string;
+  email: string;
+  recentDocs: SearchResultDetails[];
+  organisations: string[];
+  activeOrganisation: string;
 }
 
 Modal.setAppElement("#root");
@@ -109,47 +143,25 @@ const modalCustomStyles = {
 
 const languages = ["🇫🇷 FR", "🇩🇪 DE", "🇪🇸 ES", "🇮🇹 IT", "🇨🇳 CN", "🌏 GLOBAL"];
 
+// ADDED - Firebase App
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+const db = getFirestore(app);
+const auth = getAuth(app);
+const googleAuthProvier = new GoogleAuthProvider();
+
 export default class App extends React.Component<{}, AppState> {
   constructor() {
     super({});
     this.state = {
+      authed: "loading",
+      user: null,
+      userDoc: null,
       query: "",
       results: [], // CHANGED!!
       dataSourceTypes: [],
-      // [
-      //   {
-      //     name: "drive",
-      //     display_name: "Google Drive",
-      //     config_fields: [
-      //       {
-      //         name: "Placeholder",
-      //         input_type: HTMLInputType.TEXT,
-      //         label: "Placeholder",
-      //         placeholder: "Placeholder",
-      //       },
-      //     ],
-      //     image_base64: GoogleDrivePng,
-      //     has_prerequisites: false,
-      //   },
-      // ], // [],CHANGED!!
       didListedDataSources: false,
       dataSourceTypesDict: {},
-      // {
-      //   drive: {
-      //     name: "google_drive",
-      //     display_name: "Google Drive",
-      //     config_fields: [
-      //       {
-      //         name: "Placeholder",
-      //         input_type: HTMLInputType.TEXT,
-      //         label: "Placeholder",
-      //         placeholder: "Placeholder",
-      //       },
-      //     ],
-      //     image_base64: GoogleDrivePng,
-      //     has_prerequisites: false,
-      //   },
-      // }, // CHANGED
       connectedDataSources: [],
       didListedConnectedDataSources: false,
       isLoading: false,
@@ -159,7 +171,6 @@ export default class App extends React.Component<{}, AppState> {
       isStartedFetching: false,
       isPreparingIndexing: false,
       discordCodeInput: "",
-      // didPassDiscord: false,
       docsLeftToIndex: 0,
       docsInIndexing: 0,
       docsIndexed: 0,
@@ -169,6 +180,7 @@ export default class App extends React.Component<{}, AppState> {
       searchDuration: 0,
       showResultsPage: false,
       showResultModal: false, // CHANGED - ADDED !!
+      showOrganisationsPage: false, // CHANGED - ADDED !!
       aciveResult: null, // CHANGED - ADDED !!
       languageOpen: false,
       showNotReady: false,
@@ -178,9 +190,50 @@ export default class App extends React.Component<{}, AppState> {
 
     this.openModal = this.openModal.bind(this);
     this.closeModal = this.closeModal.bind(this);
+    this.handleAddDoc = this.handleAddDoc.bind(this);
+    this.handleLoginWithGoogle = this.handleLoginWithGoogle.bind(this);
+    this.handleSignOut = this.handleSignOut.bind(this);
   }
 
   componentDidMount() {
+    // ADDED - Firebase Auth
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        this.setState({ authed: true, user: user });
+        const docRef = doc(db, "users", user.uid);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          console.log("Docsnap exists");
+          const userDoc = docSnap.data() as UserDoc;
+          console.log(userDoc);
+          this.setState({ authed: true, user: user, userDoc: userDoc });
+        } else {
+          // docSnap.data() will be undefined in this case
+          await setDoc(doc(db, "users", user.uid), {
+            name: user.displayName,
+            email: user.email,
+            recentDocs: [],
+            organisations: [],
+            activeOrganisation: "",
+          });
+          this.setState({
+            authed: true,
+            user: user,
+            userDoc: {
+              name: user.displayName || "",
+              email: user.email || "",
+              recentDocs: [],
+              organisations: [],
+              activeOrganisation: "",
+            },
+          });
+        }
+      } else {
+        this.setState({ authed: false, user: null, userDoc: null });
+      }
+    });
+
     if (localStorage.getItem("uuid") === null) {
       let uuid = uuidv4();
       localStorage.setItem("uuid", uuid);
@@ -210,6 +263,118 @@ export default class App extends React.Component<{}, AppState> {
     }
   }
 
+  handleLoginWithGoogle() {
+    signInWithPopup(auth, googleAuthProvier)
+      .then(async (result) => {
+        // This gives you a Google Access Token. You can use it to access the Google API.
+        const credential = GoogleAuthProvider.credentialFromResult(result);
+        if (credential) {
+          const token = credential.accessToken;
+          // The signed-in user info.
+          const user = result.user;
+          // IdP data available using getAdditionalUserInfo(result)
+          // ...
+          const docRef = doc(db, "users", user.uid);
+          const docSnap = await getDoc(docRef);
+
+          if (docSnap.exists()) {
+            console.log("Docsnap exists");
+            const userDoc = docSnap.data() as UserDoc;
+            console.log(userDoc);
+            this.setState({ authed: true, user: user, userDoc: userDoc });
+          } else {
+            // docSnap.data() will be undefined in this case
+            await setDoc(doc(db, "users", user.uid), {
+              name: user.displayName,
+              email: user.email,
+              recentDocs: [],
+              organisations: [],
+              activeOrganisation: "",
+            });
+            this.setState({
+              authed: true,
+              user: user,
+              userDoc: {
+                name: user.displayName || "",
+                email: user.email || "",
+                recentDocs: [],
+              },
+            });
+          }
+        }
+      })
+      .catch((error) => {
+        // Handle Errors here.
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        // // The email of the user's account used.
+        // const email = error.customData.email;
+        // // The AuthCredential type that was used.
+        // const credential = GoogleAuthProvider.credentialFromError(error);
+        console.log(error);
+        console.log(errorCode);
+        // ...
+      });
+  }
+
+  handleSignOut() {
+    signOut(auth)
+      .then(() => {
+        // Sign-out successful.
+        this.setState({ authed: false, user: null });
+        window.location.replace("/");
+      })
+      .catch((error) => {
+        // An error happened.
+      });
+  }
+
+  async fetchRecentDocs() {
+    if (!this.state.user) {
+      return;
+    }
+    const docRef = doc(db, "users", this.state.user.uid);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      const userDoc = docSnap.data() as UserDoc;
+      this.setState({ userDoc: userDoc });
+    } else {
+    }
+  }
+
+  async handleAddDoc(docToAdd: SearchResultDetails) {
+    if (!this.state.user) {
+      return;
+    }
+    const docRef = doc(db, "users", this.state.user.uid);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      const userDoc = docSnap.data() as UserDoc;
+      const recentDocs = userDoc.recentDocs;
+      const found = recentDocs.find(
+        (recentDoc) =>
+          recentDoc.title === docToAdd.title &&
+          recentDoc.type === docToAdd.type &&
+          recentDoc.author === docToAdd.author &&
+          recentDoc.data_source === docToAdd.data_source
+      );
+      if (!found) {
+        recentDocs.unshift(docToAdd);
+      } else {
+        recentDocs.splice(recentDocs.indexOf(found), 1);
+        recentDocs.unshift(found);
+      }
+      if (recentDocs.length > 5) {
+        recentDocs.pop();
+      }
+      await updateDoc(doc(db, "users", this.state.user.uid), {
+        recentDocs: recentDocs,
+      });
+      this.setState({ userDoc: { ...userDoc, recentDocs: recentDocs } });
+    } else {
+    }
+  }
+
   handleSearch() {
     const path = window.location.pathname;
     const query = new URLSearchParams(window.location.search).get("query");
@@ -222,12 +387,16 @@ export default class App extends React.Component<{}, AppState> {
   async listDataSourceTypes() {
     try {
       const response = await api.get<DataSourceType[]>("/data-sources/types");
+      const filteredResponse = response.data.filter(
+        (response) =>
+          response.name === "google_drive" || response.name === "slack"
+      );
       let dataSourceTypesDict: { [key: string]: DataSourceType } = {};
-      response.data.forEach((dataSourceType) => {
+      filteredResponse.forEach((dataSourceType) => {
         dataSourceTypesDict[dataSourceType.name] = dataSourceType;
       });
       this.setState({
-        dataSourceTypes: response.data,
+        dataSourceTypes: filteredResponse,
         dataSourceTypesDict: dataSourceTypesDict,
         didListedDataSources: true,
       });
@@ -385,25 +554,6 @@ export default class App extends React.Component<{}, AppState> {
     return " text-[#A78BF6]";
   }
 
-  // hideDiscord = () => {
-  //   this.setState({ didPassDiscord: true });
-  // };
-
-  // saveDiscordPassed = (joined: boolean) => {
-  //   localStorage.setItem("discord_key", "true");
-  //   this.setState({ didPassDiscord: true });
-  //   if (joined) {
-  //     posthog.capture("passed_discord", { name: "joined" });
-  //     toast.success("Welcome to the community!", { autoClose: 2000 });
-  //   } else {
-  //     posthog.capture("passed_discord", { name: "skipped" });
-  //     toast.success(
-  //       "Welcome! use top-left discord icon to join the community.",
-  //       { autoClose: 8000 }
-  //     );
-  //   }
-  // };
-
   dataSourcesAdded = (newlyConnected: ConnectedDataSource) => {
     posthog.capture("added", { name: newlyConnected.name });
     let isFirstTime = false;
@@ -443,6 +593,19 @@ export default class App extends React.Component<{}, AppState> {
     this.setState({ showResultModal: false, aciveResult: null });
   };
 
+  // Changed - ADDED !!
+  toggleShowOrganisations = (_event: React.MouseEvent) => {
+    if (
+      this.state.showOrganisationsPage &&
+      this.state.userDoc?.activeOrganisation
+    ) {
+      this.setState({ showOrganisationsPage: false });
+    }
+    if (!this.state.showOrganisationsPage) {
+      this.setState({ showOrganisationsPage: true });
+    }
+  };
+
   // CHANGED - ADDED !!
   bundleSearchResults = (results: SearchResultDetails[]) => {
     const newArray: SearchResultDetails[] = [];
@@ -475,7 +638,16 @@ export default class App extends React.Component<{}, AppState> {
           newArray.push(result);
         }
       }
-      // Otherwise, it is not from GDrive, so we just push it to the result array
+      // Otherwise, it is not from GDrive, so check if it is from Slack
+      else if (result.data_source === "slack") {
+        // If it is from Slack, separate the first text part and the second text part
+        const newSlackResult: SearchResultDetails = {
+          ...result,
+          content: [result.content[0]],
+        };
+        newArray.push(newSlackResult);
+      }
+      // Otherwise it is not from GDrive or Slack, so we just push it to the result array
       else {
         newArray.push(result);
       }
@@ -501,78 +673,24 @@ export default class App extends React.Component<{}, AppState> {
           <button onClick={this.openModal} className="cursor-pointer">
             <DataIcon />
           </button>
-          <button onClick={this.goHomePage} className="cursor-pointer">
-            <ProfileIcon />
+          <button
+            onClick={this.toggleShowOrganisations}
+            className="cursor-pointer"
+          >
+            <DataIcon />
           </button>
+          {this.state.authed === true ? (
+            <button onClick={this.handleSignOut} className="cursor-pointer">
+              <LogoutIcon />
+            </button>
+          ) : (
+            <button onClick={() => {}} className="cursor-pointer">
+              <ProfileIcon />
+            </button>
+          )}
         </div>
 
         <Tooltip id="my-tooltip" style={{ fontSize: "18px" }} />
-        {/* <ToastContainer className="z-50" theme="colored" /> */}
-        {/* <a
-          href="https://discord.gg/NKhTX7JZAF"
-          rel="noreferrer"
-          target="_blank"
-        >
-          <img
-            data-tooltip-id="my-tooltip"
-            src={DiscordImage}
-            data-tooltip-content="Click for 24/7🕒 live support 👨‍🔧💬"
-            data-tooltip-place="bottom"
-            alt="discord"
-            className="absolute left-0 z-30 h-7 hover:fill-[#a7a1fe] fill-[#8983e0] float-left ml-6 mt-6 text-[42px] hover:cursor-pointer transition-all duration-300 hover:drop-shadow-2xl"
-          ></img>
-        </a> */}
-        <span
-          className={
-            "absolute right-0 z-30 float-right mr-6 mt-6 flex flex-row " +
-            (this.state.languageOpen ? "items-start" : "items-center")
-          }
-        >
-          <span className="flex flex-col mr-4 bg-[#0D7E97] border-2 rounded-xl border-[#000]">
-            <span
-              onClick={() => {
-                this.setState({ languageOpen: !this.state.languageOpen });
-              }}
-              className="flex justify-between flex-row items-center px-2 rounded-xl
-              hover:cursor-pointer hover:drop-shadow-2xl transition-all duration-100 hover:bg-[rgba(13, 126, 151, 0.8)] hover:border-[#787099]"
-            >
-              {/* <a className="text-xl text-white mr-2">EN</a> */}
-              {/* <img src={UsaImage} className="h-8 text-[42px] grayscale-[0.5]"/> */}
-              <span className="text-[20px] text-white">
-                🇺🇸 {this.state.languageOpen ? "EN" : ""}
-              </span>
-              <IoMdArrowDropdown
-                className={
-                  "ml-1 fill-white text-[22px] transition-all duration-300 " +
-                  (this.state.languageOpen ? "rotate-180" : "")
-                }
-              ></IoMdArrowDropdown>
-            </span>
-            {this.state.languageOpen && (
-              <div className="flex flex-col text-white">
-                {languages.map((lang) => {
-                  return (
-                    <a
-                      href="https://gerev.typeform.com/languages"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-[20px] px-2 py-1 rounded-xl hover:cursor-pointer hover:drop-shadow-2xl transition-all duration-100
-                  hover:bg-[#7b70a4b9] hover:border-[#787099] text-start"
-                    >
-                      {lang}
-                    </a>
-                  );
-                })}
-              </div>
-            )}
-          </span>
-
-          {/* <FiSettings
-            onClick={this.openModal}
-            stroke={"#0D7E97"}
-            className="mr-2 text-[42px] hover:cursor-pointer hover:rotate-90 transition-all duration-300 hover:drop-shadow-2xl"
-          ></FiSettings> */}
-        </span>
         {this.inIndexing() && (
           <div className="absolute mx-auto left-0 right-0 w-fit z-20 top-6">
             <div className="text-xs bg-[#0D7E97] border-[#4F4F4F] border-[.8px] rounded-full inline-block px-3 py-1">
@@ -612,79 +730,6 @@ export default class App extends React.Component<{}, AppState> {
               </div>
             )
         }
-        {/* Discord page */}
-        {/* {!this.state.didPassDiscord && (
-          <div className="absolute z-30 flex flex-col items-center top-40 mx-auto w-full">
-            <div className="flex flex-col items-start w-[660px] h-[305px] bg-[#36393F] rounded-xl">
-              <div className="flex flex-col justify-center items-start  p-3">
-                <div className="ml-[614px] text-2xl text-white gap-4">
-                  <IoMdClose
-                    onClick={this.hideDiscord}
-                    className="hover:text-[#9875d4] hover:cursor-pointer"
-                  />
-                </div>
-                <span className="flex flex-row text-white text-3xl font-bold m-5 mt-5 mb-6 font-sans items-center">
-                  <span>Are you on Discord?</span>
-                  <img
-                    src={DiscordImage}
-                    alt="discord"
-                    className="relative inline h-10 ml-4 opacity-80 animate-pulse"
-                  ></img>
-                </span>
-                <div className="flex flex-row w-[97%] bg-[#faa61a1a] p-3 ml-1 border-[2px] border-[#FAA61A] rounded-[5px]">
-                  <img
-                    className="ml-2 h-10"
-                    src={WarningImage}
-                    alt="warning"
-                  ></img>
-                  <button className="ml-4 text-white text-xl font-source-sans-pro font-semibold inline">
-                    <span className="block text-left">
-                      Join Gerev's 1000+ discord community members, get early
-                      access to exclusive features.
-                      <a
-                        href="https://discord.gg/aMRRcmhAdW"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex transition duration-150 ease-in-out group ml-1 hover:cursor-pointer"
-                      >
-                        Join Discord
-                        <span className="font-dm-sans tracking-normal font-semibold group-hover:translate-x-0.5 transition-transform duration-150 ease-in-out ml-1">
-                          -&gt;
-                        </span>
-                      </a>
-                    </span>
-                  </button>
-                </div>
-              </div>
-              <div className="flex flex-row justify-between p-4 w-[100%]  mt-7 rounded-b-xl h-[100px] bg-[#2F3136]">
-                <button
-                  onClick={() => {
-                    this.saveDiscordPassed(false);
-                  }}
-                  className="font-dm-sans bg-[#4f545d] hover:bg-[#3a3e45] rounded h-12 p-2 text-white w-40"
-                >
-                  Hide forever
-                </button>
-
-                <a
-                  onClick={() => {
-                    this.saveDiscordPassed(true);
-                  }}
-                  href="https://discord.gg/aMRRcmhAdW"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex hover:bg-[#404ab3] justify-center items-center font-dm-sans bg-[#5865F2] rounded h-12 p-2 text-white w-40 
-                    inline-flex transition duration-150 ease-in-out group ml-1 hover:cursor-pointer"
-                >
-                  Join Discord
-                  <span className="font-dm-sans tracking-normal font-semibold group-hover:translate-x-0.5 transition-transform duration-150 ease-in-out ml-1">
-                    -&gt;
-                  </span>
-                </a>
-              </div>
-            </div>
-          </div>
-        )} */}
         {/* Not ready yet page */}
         {this.state.showNotReady && (
           <div className="absolute z-30 flex flex-col items-center top-[200px] mx-auto w-full">
@@ -737,108 +782,188 @@ export default class App extends React.Component<{}, AppState> {
             </div>
           </div>
         )}
-        <div
-          className={
-            "w-[100vw] z-10 filter min-h-screen" +
-            (this.state.isModalOpen ||
-            (this.state.didListedConnectedDataSources &&
-              this.state.connectedDataSources.length === 0)
-              ? " filter blur-sm"
-              : "") +
-            (this.state.showResultsPage ? "bg-white" : "")
-          }
-        >
-          <Modal
-            isOpen={this.state.isModalOpen}
-            onRequestClose={this.closeModal}
-            contentLabel="Example Modal"
-            style={modalCustomStyles}
-          >
-            <DataSourcePanel
-              onClose={this.closeModal}
-              connectedDataSources={this.state.connectedDataSources}
-              inIndexing={this.inIndexing()}
-              onAdded={this.dataSourcesAdded}
-              dataSourceTypesDict={this.state.dataSourceTypesDict}
-              onRemoved={this.dataSourceRemoved}
-            />
-          </Modal>
 
-          {/* front search page*/}
-          {!this.state.showResultsPage && (
-            <div className="relative flex flex-col items-center top-10 mx-auto w-full">
-              <h1 className="flex flex-col items-center text-4xl text-center text-white m-10">
-                {/* <GiSocks
-                  className={
-                    "text-7xl text-center mt-4 mr-7" + this.getSocksColor()
-                  }
-                ></GiSocks> */}
-                <img
-                  alt="Precept Logo"
-                  src={PreceptLogo}
-                  className="w-20 h-20"
-                />
-                <span
-                  className={
-                    " text-[#000] block font-dm-sans md:leading-normal bg-clip-text bg-gradient-to-l"
-                  }
-                >
-                  Precept
-                </span>
-              </h1>
-              <SearchBar
-                widthPercentage={32}
-                isDisabled={this.state.isServerDown}
-                query={this.state.query}
-                isLoading={this.state.isLoading}
-                showReset={this.state.results.length > 0}
-                onSearch={this.goSearchPage}
-                onQueryChange={this.handleQueryChange}
-                onClear={this.clear}
-                showSuggestions={true}
+        {/* Login or loading or app */}
+        {this.state.authed === "loading" ? (
+          <div className="w-screen z-10 filter min-h-screen bg-white flex flex-col items-center py-[80px] px-[100px] gap-[80px]">
+            <div className=" flex flex-col items-center justify-center gap-[10px]">
+              <div className="w-20 h-20 rounded-full animate-pulse bg-[rgba(0,0,0,0.04)] dark:bg-[rgba(0,0,0,0.8)]"></div>
+              <div className="w-[150px] h-[55px] rounded-md animate-pulse bg-[rgba(0,0,0,0.04)] dark:bg-[rgba(0,0,0,0.8)]"></div>
+            </div>
+            <div className="w-[200px] h-[65px] rounded-md animate-pulse bg-[rgba(0,0,0,0.04)] dark:bg-[rgba(0,0,0,0.8)]"></div>
+            <div className="w-[250px] h-[55px] rounded-[10px] animate-pulse bg-[rgba(0,0,0,0.04)] dark:bg-[rgba(0,0,0,0.8)]"></div>
+          </div>
+        ) : this.state.authed === false ? (
+          <div className="w-screen z-10 filter min-h-screen bg-white flex flex-col items-center py-[80px] px-[100px] gap-[80px]">
+            <div className=" flex flex-col items-center justify-center gap-[10px]">
+              <img
+                alt="Precept Logo"
+                src={PreceptLogo}
+                className="w-[128px] h-[128px]"
               />
-
-              <button
-                onClick={this.goSearchPage}
-                className="h-9 w-28 mt-8 p-3 flex items-center justify-center hover:shadow-sm
-                  transition duration-150 ease-in-out hover:shadow-[#6c6c6c] bg-[#0D7E97] rounded border-[.5px] border-[#6e6e6e88]"
+              <h1
+                className={
+                  " text-[#000] block font-dm-sans text-3xl text-center"
+                }
               >
-                <span className="font-bold text-[15px] text-[#fff]">
-                  Search
-                </span>
-                <img alt="enter" className="ml-2" src={EnterImage}></img>
+                Precept
+              </h1>
+            </div>
+            <h2 className="font-dm-sans font-bold text-5xl">Login</h2>
+            <div className="flex gap-[40px]">
+              <button onClick={() => {}} className="cursor-pointer">
+                <img
+                  className="h-[55px] w-auto"
+                  src={MicrosoftLoginButton}
+                  alt="Login with Microsoft"
+                />
+              </button>
+              <button
+                onClick={this.handleLoginWithGoogle}
+                className="cursor-pointer"
+              >
+                <img
+                  className="h-[55px] w-auto shadow-[0_2px_4px_rgba(0,0,0,0.25)]"
+                  src={GoogleLoginButton}
+                  alt="Login with Google"
+                />
               </button>
             </div>
-          )}
+          </div>
+        ) : (
+          <div
+            className={
+              "w-screen z-10 filter min-h-screen " +
+              (this.state.isModalOpen ||
+              (this.state.didListedConnectedDataSources &&
+                this.state.connectedDataSources.length === 0)
+                ? "filter blur-sm"
+                : "") +
+              (this.state.showResultsPage ? "bg-white" : "")
+            }
+          >
+            <Modal
+              isOpen={this.state.isModalOpen}
+              onRequestClose={this.closeModal}
+              contentLabel="Example Modal"
+              style={modalCustomStyles}
+            >
+              <DataSourcePanel
+                onClose={this.closeModal}
+                connectedDataSources={this.state.connectedDataSources}
+                inIndexing={this.inIndexing()}
+                onAdded={this.dataSourcesAdded}
+                dataSourceTypesDict={this.state.dataSourceTypesDict}
+                onRemoved={this.dataSourceRemoved}
+              />
+            </Modal>
 
-          {/* results page */}
-          {this.state.showResultsPage && (
-            <div className="relative flex flex-row w-full">
-              {/* <div className="fixed h-screen w-[100px] bg-[#e5e5e5] flex flex-col items-center px-[20px] py-[40px] gap-[40px]">
-                <button onClick={this.goHomePage} className="cursor-pointer">
+            {/* check if there is an active organisation */}
+            {!this.state.userDoc?.activeOrganisation ||
+            this.state.showOrganisationsPage ? (
+              <div className="relative flex flex-col items-center top-10 mx-auto w-full">
+                <h1 className="flex flex-col items-center gap-[10px] text-3xl text-center text-white m-10">
                   <img
-                    src={PreceptLogo}
                     alt="Precept Logo"
-                    className="w-[48px] h-auto"
+                    src={PreceptLogo}
+                    className="w-[128px] h-[128px]"
                   />
-                </button>
-                <button onClick={this.goHomePage} className="cursor-pointer">
-                  <SearchIcon />
-                </button>
-                <button onClick={this.openModal} className="cursor-pointer">
-                  <DataIcon />
-                </button>
-                <button onClick={this.goHomePage} className="cursor-pointer">
-                  <ProfileIcon />
-                </button>
-              </div> */}
+                  <span
+                    className={
+                      " text-[#000] block font-dm-sans md:leading-normal bg-clip-text bg-gradient-to-l"
+                    }
+                  >
+                    Precept
+                  </span>
+                </h1>
 
-              {/* <span className="flex flex-row items-start text-3xl text-center text-white m-10 mx-7 mt-0">
-                <span className="text-[#0D7E97]	block font-dm-sans md:leading-normal bg-clip-text bg-gradient-to-l">
-                  Precept
-                </span>
-              </span> */}
-              <div className="flex flex-col items-center w-full ml-[100px]">
+                <AddOrganisation />
+              </div>
+            ) : !this.state.showResultsPage ? (
+              // front search page*
+              <div className="relative flex flex-col items-center top-10 mx-auto w-full">
+                <h1 className="flex flex-col items-center gap-[10px] text-3xl text-center text-white m-10">
+                  <img
+                    alt="Precept Logo"
+                    src={PreceptLogo}
+                    className="w-[128px] h-[128px]"
+                  />
+                  <span
+                    className={
+                      " text-[#000] block font-dm-sans md:leading-normal bg-clip-text bg-gradient-to-l"
+                    }
+                  >
+                    Precept
+                  </span>
+                </h1>
+                <SearchBar
+                  widthPercentage={32}
+                  isDisabled={this.state.isServerDown}
+                  query={this.state.query}
+                  isLoading={this.state.isLoading}
+                  showReset={this.state.results.length > 0}
+                  onSearch={this.goSearchPage}
+                  onQueryChange={this.handleQueryChange}
+                  onClear={this.clear}
+                  showSuggestions={true}
+                />
+
+                <button
+                  onClick={this.goSearchPage}
+                  className="h-9 w-28 mt-8 p-3 flex items-center justify-center hover:shadow-sm
+                  transition duration-150 ease-in-out hover:shadow-[#6c6c6c] bg-[#0D7E97] rounded border-[.5px] border-[#6e6e6e88]"
+                >
+                  <span className="font-bold text-[15px] text-[#fff]">
+                    Search
+                  </span>
+                  <img alt="enter" className="ml-2" src={EnterImage}></img>
+                </button>
+
+                <div className="w-[80%] flex flex-col gap-[20px] px-[120px] py-[40px]">
+                  <h2>Recent docs</h2>
+                  {this.state.userDoc?.recentDocs.map((result, index) =>
+                    this.state.dataSourceTypesDict[result.data_source] ? (
+                      <SearchResult
+                        key={index}
+                        resultDetails={{
+                          ...result,
+                          score: 80,
+                          content:
+                            result.data_source === "slack"
+                              ? [result.content[0]]
+                              : [],
+                        }}
+                        dataSourceType={
+                          this.state.dataSourceTypesDict[result.data_source]
+                        }
+                        openModal={this.openResultModal}
+                        closeModal={this.closeResultModal}
+                        addRecentDoc={this.handleAddDoc}
+                        db={db}
+                      />
+                    ) : (
+                      <SkeletonLoader />
+                    )
+                  )}
+                </div>
+                {this.state.showResultModal && this.state.aciveResult && (
+                  <ResultModal
+                    result={this.state.aciveResult}
+                    dataSourceType={
+                      this.state.dataSourceTypesDict[
+                        this.state.aciveResult.data_source
+                      ]
+                    }
+                    closeModal={this.closeResultModal}
+                    addRecentDoc={this.handleAddDoc}
+                    db={db}
+                  />
+                )}
+              </div>
+            ) : (
+              // Search results page
+              // <div className="relative flex flex-row w-full bg-white min-h-full">
+              <div className="flex flex-col items-center w-full h-full pl-[100px]">
                 <div className="w-full flex justify-center items-center py-[20px] bg-[rgba(0,0,0,0.04)] shadow-[0_2px_8px_rgba(0,0,0,0.12)]">
                   <SearchBar
                     widthPercentage={40}
@@ -880,6 +1005,8 @@ export default class App extends React.Component<{}, AppState> {
                             }
                             openModal={this.openResultModal}
                             closeModal={this.closeResultModal}
+                            addRecentDoc={this.handleAddDoc}
+                            db={db}
                           />
                         );
                       }
@@ -895,12 +1022,14 @@ export default class App extends React.Component<{}, AppState> {
                       ]
                     }
                     closeModal={this.closeResultModal}
+                    addRecentDoc={this.handleAddDoc}
+                    db={db}
                   />
                 )}
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
     );
   }
@@ -967,6 +1096,7 @@ export default class App extends React.Component<{}, AppState> {
         .then((response) => {
           let end = new Date().getTime();
           let duartionSeconds = (end - start) / 1000;
+          console.log(response.data);
           this.setState({
             results: response.data,
             isLoading: false,
@@ -986,125 +1116,3 @@ export default class App extends React.Component<{}, AppState> {
     }
   };
 }
-
-// // CHANGED - CREATED DUMMY RESULTS !!
-// const dummyResults: SearchResultDetails[] = [
-//   {
-//     type: ResultType.Docment,
-//     data_source: "drive",
-//     title: "Strategic Board Review Session 18.09.2022",
-//     author: "Rayhan Beebeejaun",
-//     author_image_url:
-//       "https://media.licdn.com/dms/image/D4E03AQGifA_PF339bA/profile-displayphoto-shrink_800_800/0/1666193151320?e=1690416000&v=beta&t=tNJunUyqBrg8eCMAHsi2C5y2cCOuuLTfs_O7K5m0V64",
-//     author_image_data: "Dummy data",
-//     time: new Date().toString(),
-//     content: [
-//       {
-//         content:
-//           "Meeting notes from last SBR. This covered projected return profile for HH2",
-//         bold: true,
-//       },
-//       {
-//         content:
-//           "This document explains the business plan that was presented to the board for the £140m per year opportunity, project HH2. It describes the planned behavioural science approach to customer acquisition and the projected ROI over the next 10 years. It details KPIs that will be used to measure the success of the 12-month pilot phase.",
-//         bold: false,
-//       },
-//     ],
-//     score: 99,
-//     location: "Dummy location",
-//     platform: "Drive",
-//     file_type: FileType.Pdf,
-//     status: "active",
-//     is_active: true,
-//     url: "https://drive.google.com/file/d/16uQAKPY1R7yxPoFeS6Tpv1vurcVOhMUt/view?usp=share_link",
-//     child: null,
-//   },
-//   {
-//     type: ResultType.Docment,
-//     data_source: "drive",
-//     title: "Strategic Board Review Session 18.09.2022",
-//     author: "Rayhan Beebeejaun",
-//     author_image_url:
-//       "https://media.licdn.com/dms/image/D4E03AQGifA_PF339bA/profile-displayphoto-shrink_800_800/0/1666193151320?e=1690416000&v=beta&t=tNJunUyqBrg8eCMAHsi2C5y2cCOuuLTfs_O7K5m0V64",
-//     author_image_data: "Dummy data",
-//     time: new Date().toString(),
-//     content: [
-//       {
-//         content: "Another match",
-//         bold: true,
-//       },
-//       {
-//         content:
-//           "Another text similarity match to test bundling results from the same document together",
-//         bold: false,
-//       },
-//     ],
-//     score: 99,
-//     location: "Dummy location",
-//     platform: "Drive",
-//     file_type: FileType.Pdf,
-//     status: "active",
-//     is_active: true,
-//     url: "https://drive.google.com/file/d/16uQAKPY1R7yxPoFeS6Tpv1vurcVOhMUt/view?usp=share_link",
-//     child: null,
-//   },
-//   {
-//     type: ResultType.Docment,
-//     data_source: "drive",
-//     title: "Strategic Board Review Session 18.09.2022",
-//     author: "Rayhan Beebeejaun",
-//     author_image_url:
-//       "https://media.licdn.com/dms/image/D4E03AQGifA_PF339bA/profile-displayphoto-shrink_800_800/0/1666193151320?e=1690416000&v=beta&t=tNJunUyqBrg8eCMAHsi2C5y2cCOuuLTfs_O7K5m0V64",
-//     author_image_data: "Dummy data",
-//     time: new Date().toString(),
-//     content: [
-//       {
-//         content: "An additional match",
-//         bold: true,
-//       },
-//       {
-//         content:
-//           "Another text similarity match to test bundling results from the same document together",
-//         bold: false,
-//       },
-//     ],
-//     score: 99,
-//     location: "Dummy location",
-//     platform: "Drive",
-//     file_type: FileType.Pdf,
-//     status: "active",
-//     is_active: true,
-//     url: "https://drive.google.com/file/d/16uQAKPY1R7yxPoFeS6Tpv1vurcVOhMUt/view?usp=share_link",
-//     child: null,
-//   },
-//   {
-//     type: ResultType.Docment,
-//     data_source: "drive",
-//     title: "Sales projection 24.09.2022",
-//     author: "Rayhan Beebeejaun",
-//     author_image_url:
-//       "https://media.licdn.com/dms/image/D4E03AQGifA_PF339bA/profile-displayphoto-shrink_800_800/0/1666193151320?e=1690416000&v=beta&t=tNJunUyqBrg8eCMAHsi2C5y2cCOuuLTfs_O7K5m0V64",
-//     author_image_data: "Dummy data",
-//     time: new Date().toString(),
-//     content: [
-//       {
-//         content:
-//           "Sales report projecting revenue for the next 3 quarters. This included projected revenue from HH2",
-//         bold: true,
-//       },
-//       {
-//         content:
-//           "Sales report looking at company-wide sales for the period 01.01.2022 - 31.08.2022. It is the foundation on which the proposal for Project HH2 was made and contains most of the raw data underpinning project HH2’s go to market plan and financial forecast.",
-//         bold: false,
-//       },
-//     ],
-//     score: 80,
-//     location: "Dummy location 2",
-//     platform: "Drive",
-//     file_type: FileType.Pptx,
-//     status: "active",
-//     is_active: true,
-//     url: "https://docs.google.com/presentation/d/1r8CvG22D2-9seHh5bzTp2Ks6z77ZVCms/edit#slide=id.p1",
-//     child: null,
-//   },
-// ];

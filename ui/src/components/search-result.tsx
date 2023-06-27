@@ -14,6 +14,8 @@ import { RiGitRepositoryLine } from "react-icons/ri";
 import { GoAlert } from "react-icons/go";
 import { MdVerified } from "react-icons/md";
 
+import { Firestore } from "firebase/firestore";
+
 export interface TextPart {
   content: string;
   bold: boolean;
@@ -59,45 +61,71 @@ export interface SearchResultProps {
   dataSourceType: DataSourceType;
   openModal?: (result: SearchResultDetails) => void;
   closeModal?: () => void;
+  addRecentDoc?: (docToAdd: SearchResultDetails) => Promise<void>;
+  db: Firestore;
 }
 
 export const SearchResult = (props: SearchResultProps) => {
+  const handleOpenClick = async () => {
+    // Add the document to the recent documents list
+    if (props.addRecentDoc) {
+      await props.addRecentDoc(props.resultDetails);
+      window.open(props.resultDetails.url, "_blank");
+    }
+  };
   return (
     <div
       className={
-        "px-10 py-5 bg-[#fff] rounded-[10px] hover:drop-shadow-[0_4px_8px_rgba(0,0,0,0.12)] cursor-pointer"
+        "px-10 py-5 w-full flex flex-row bg-[#fff] rounded-[10px] hover:drop-shadow-[0_4px_8px_rgba(0,0,0,0.12)] cursor-pointer"
       }
       onClick={
-        props.openModal ? () => props.openModal(props.resultDetails) : () => {}
+        props.openModal
+          ? props.resultDetails.data_source === "slack"
+            ? () => props.openModal(props.resultDetails)
+            : // () => handleOpenClick()
+              () => props.openModal(props.resultDetails)
+          : () => {}
       }
     >
-      {props.resultDetails.type !== ResultType.Comment && (
-        <span className="relative text-sm font-dm-sans float-right text-[#000] right-2 top-2">
-          {props.resultDetails.score.toFixed(2)}%
-        </span>
-      )}
-      <div className="flex flex-row items-stretch">
+      <div className="flex flex-row items-stretch w-full">
         <span className="flex flex-col items-center mt-2 mr-2">
           {getBigIcon(props)}
           {props.resultDetails.child && (
             <span className={"w-[1px] mt-2 h-[85%] bg-[#66548D]"}></span>
           )}
         </span>
-        <p className="w-11/12 p-2 pt-0 ml-1 text-[#A3A3A3] text-sm font-dm-sans">
+        <p className="w-full px-[20px] pt-0 ml-1 text-[#A3A3A3] text-sm font-dm-sans overflow-hidden">
+          {props.resultDetails.type !== ResultType.Comment &&
+            props.resultDetails.score < 30 && (
+              <span className="text-sm font-dm-sans font-bold text-red-600">
+                Warning: low match
+              </span>
+            )}
           <div className="flex flex-row items-center justify-start">
+            {/* {props.resultDetails.type !== ResultType.Comment &&
+              props.resultDetails.score < 40 && (
+                <span className="text-sm font-dm-sans font-bold text-red-600">
+                  Warning: low match
+                </span>
+              )} */}
             {props.resultDetails.type === ResultType.Issue && (
               <span className="mr-[6px] px-[7px] py-[1px] font-dm-sans font-medium text-[15px] bg-[#392E58] text-[#0D7E97] rounded-lg">
                 ISSUE
               </span>
             )}
-            <a
+            <button
+              onClick={
+                props.openModal
+                  ? props.resultDetails.data_source === "slack"
+                    ? () => props.openModal(props.resultDetails)
+                    : // () => {}
+                      () => props.openModal(props.resultDetails)
+                  : () => {}
+              }
               className="text-[24px] overflow-hidden overflow-ellipsis whitespace-nowrap text-[#0D7E97] text-xl font-dm-sans font-medium hover:underline hover:cursor-pointer"
-              href={props.resultDetails.url}
-              rel="noreferrer"
-              target="_blank"
             >
               {props.resultDetails.title}
-            </a>
+            </button>
             {props.resultDetails.type === ResultType.Comment && (
               <span className="flex flex-row items-center justify-center ml-2 mt-[5px] font-dm-sans">
                 Commented {getDaysAgo(props.resultDetails.time)}
@@ -141,8 +169,12 @@ export const SearchResult = (props: SearchResultProps) => {
               )}
           </div>
           {props.resultDetails.type !== ResultType.Comment && (
-            <span className="flex flex-row text-[16px] mb-4 mt-[6px] font-dm-sans text-[#0D7E97]">
-              <span className="flex flex-row items-center leading-[17px] px-[6px] py-[3px] bg-[#0D7E97] rounded-[5px] ml-0 text-[#fff]">
+            <span
+              className={`flex flex-row text-[16px] mt-[6px] font-dm-sans text-[#0D7E97] w-full ${
+                props.resultDetails.content.length > 0 ? "mb-4" : ""
+              }`}
+            >
+              <span className="flex flex-row items-center leading-[17px] px-[6px] py-[3px] bg-[#0D7E97] rounded-[5px] ml-0 text-[#fff] max-w-[25%]">
                 {props.resultDetails.type === ResultType.Docment && (
                   <img
                     alt="purple-folder"
@@ -153,14 +185,16 @@ export const SearchResult = (props: SearchResultProps) => {
                 {props.resultDetails.type === ResultType.Issue && (
                   <RiGitRepositoryLine className="h-[14px] mt-[1px] mr-[2px]"></RiGitRepositoryLine>
                 )}
-                <span className="text-[15x] font-dm-sans">
-                  {props.resultDetails.type === ResultType.Docment && " / "}
-                  {props.resultDetails.type === ResultType.Message && "#"}
-                  {props.resultDetails.location}{" "}
+                <span className="text-[15x] font-dm-sans line-clamp-1">
+                  {props.resultDetails.type === ResultType.Docment
+                    ? " /" + props.resultDetails.location + " "
+                    : props.resultDetails.type === ResultType.Message
+                    ? "#" + props.resultDetails.location + " "
+                    : props.resultDetails.location}{" "}
                 </span>
               </span>
               {props.resultDetails.type !== ResultType.Message && (
-                <span className="ml-1 flex flex-row items-center font-dm-sans">
+                <span className="ml-1 flex flex-row items-center font-dm-sans max-w-[25%]">
                   <Img
                     alt="author"
                     className="inline-block ml-[6px] mr-2 h-4 rounded-xl"
@@ -178,7 +212,7 @@ export const SearchResult = (props: SearchResultProps) => {
               {props.resultDetails.child === null &&
                 props.resultDetails.type !== ResultType.Message &&
                 DateSpan(props)}
-              <span className="flex flex-row items-center">
+              <span className="flex flex-row items-center max-w-[25%]">
                 &thinsp; |&thinsp;
                 <img
                   alt="file-type"
@@ -191,8 +225,8 @@ export const SearchResult = (props: SearchResultProps) => {
               </span>
             </span>
           )}
-          {
-            <span>
+          {props.resultDetails.content.length > 0 && (
+            <span className="line-clamp-2">
               {/* {props.resultDetails.content.map((text_part, index) => {
                 return (
                   <>
@@ -235,8 +269,20 @@ export const SearchResult = (props: SearchResultProps) => {
                 </span>
               )}
             </span>
-          }
+          )}
         </p>
+        <button
+          onClick={
+            props.openModal
+              ? props.resultDetails.data_source === "slack"
+                ? () => props.openModal(props.resultDetails)
+                : () => props.openModal(props.resultDetails)
+              : () => {}
+          }
+          className="self-center w-[150px] h-[45px] bg-[rgba(0,0,0,0.04)] hover:bg-[rgba(13,126,151,0.12)] cursor-pointer font-black hover:font-[#0D7E97] font-dm-sans rounded-[10px] top-0 bottom-0"
+        >
+          {props.resultDetails.data_source === "slack" ? "Preview" : "Preview"}
+        </button>
       </div>
       {props.resultDetails.child && (
         <SearchResult
@@ -293,7 +339,7 @@ function isOpenStatus(props: SearchResultProps) {
 function DateSpan(props: SearchResultProps) {
   const time = getFormattedDate(props.resultDetails.time);
   return (
-    <span className="flex flex-row items-center ml-1">
+    <span className="flex flex-row items-center ml-1 max-w-[25%]">
       <Img
         alt="author"
         className="inline-block ml-[6px] mr-1 h-4"
@@ -365,14 +411,14 @@ export function getBigIcon(props: SearchResultProps) {
       }
       break;
     case ResultType.Message:
-      containingClasses = "rounded-full";
+      containingClasses = " rounded-full";
       containingImage = props.resultDetails.author_image_data
         ? props.resultDetails.author_image_data
         : props.resultDetails.author_image_url;
       onTopImage = props.dataSourceType.image_base64;
       break;
     case ResultType.Comment:
-      containingClasses = "rounded-full";
+      containingClasses = " rounded-full";
       containingImage = props.resultDetails.author_image_data
         ? props.resultDetails.author_image_data
         : props.resultDetails.author_image_url;
@@ -381,18 +427,23 @@ export function getBigIcon(props: SearchResultProps) {
   if (onTopImage !== "") {
     return (
       <div className="mt-2 mr-[10px] drop-shadow-[0_0_25px_rgba(212,179,255,0.15)]">
+        <img
+          alt="file-type"
+          // className="company-logo rounded-full p-[3px] h-[24px] w-[24px] absolute -right-[5px] -bottom-[5px] bg-white"
+          className={"  h-auto w-[50px] "}
+          src={onTopImage}
+        ></img>
         <Img
           height={"45px"}
           width={"45px"}
-          className={containingClasses}
+          // className={containingClasses}
+          className={
+            "company-logo p-[3px] h-[24px] w-[24px] absolute -right-[5px] -bottom-[5px] bg-white" +
+            containingClasses
+          }
           alt="file-type"
           src={[containingImage, DefaultUserImage]}
         />
-        <img
-          alt="file-type"
-          className="company-logo rounded-full p-[3px] h-[24px] w-[24px] absolute -right-[5px] -bottom-[5px] bg-white"
-          src={onTopImage}
-        ></img>
       </div>
     );
   } else {

@@ -1,15 +1,111 @@
-import React from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { FileType, SearchResultDetails } from "./search-result";
 import { ResultType, getBigIcon, TextPart } from "./search-result";
 import { DataSourceType } from "../data-source";
+import { Firestore } from "firebase/firestore";
+
+import GoogleDoc from "../assets/images/google-doc.svg";
+import Docx from "../assets/images/docx.svg";
+import Pdf from "../assets/images/pdf.svg";
+import Pptx from "../assets/images/pptx.svg";
+import SlackLogo from "../assets/images/slack-logo.png";
 
 export interface ResultModalProps {
   result: SearchResultDetails;
   dataSourceType: DataSourceType;
   closeModal: () => void;
+  addRecentDoc?: (docToAdd: SearchResultDetails) => Promise<void>;
+  db: Firestore;
 }
 
 export const ResultModal = (props: ResultModalProps) => {
+  const [slackMessages, setSlackMessages] =
+    useState<SlackMessagesResponse | null>();
+
+  const [matchedMessage, setMatchedMessage] = useState<SlackMessage | null>();
+
+  const matchedMessageRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (matchedMessageRef.current) {
+      matchedMessageRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+        inline: "center",
+      });
+    }
+  }, [matchedMessageRef.current]);
+
+  useEffect(() => {
+    const getSlackMessages = async () => {
+      try {
+        const { channel, ts } = getSlackUrlParams(props.result.url);
+        try {
+          const slackMessagesResponse = await fetch(
+            "https://us-central1-precept-386815.cloudfunctions.net/get_slack_messages/",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                channel: channel,
+                ts: ts,
+              }),
+            }
+          );
+          const slackMessages: SlackMessagesResponse =
+            await slackMessagesResponse.json();
+          console.log(slackMessages);
+          // Find the matched text manually
+          let highestMatch: {
+            numberOfMatches: number;
+            match: SlackMessage;
+          } | null = null;
+          const matchedText = props.result.content[0].content;
+          const matchedTextArray = matchedText.split(" ");
+          for (const message of slackMessages.messages) {
+            let numberOfMatches = 0;
+            for (const word of matchedTextArray) {
+              if (message.text.includes(word)) {
+                numberOfMatches++;
+              }
+            }
+            // If this is the first message, or if this messaage has a higher number of matches than the current highest match, set this as the highest match
+            if (
+              !highestMatch ||
+              numberOfMatches > highestMatch.numberOfMatches
+            ) {
+              highestMatch = {
+                numberOfMatches: numberOfMatches,
+                match: message,
+              };
+            }
+          }
+          if (highestMatch) {
+            setMatchedMessage(highestMatch.match);
+          }
+          console.log("highest match: ", highestMatch);
+          setSlackMessages(slackMessages);
+        } catch (e) {
+          console.log("Error communicating with server for Slack messages");
+        }
+      } catch (e) {
+        console.log("Error getting slack url params");
+        console.log(e);
+      }
+    };
+    if (props.result.data_source === "slack") {
+      getSlackMessages();
+    }
+  }, []);
+
+  const handleOpenClick = async (url: string) => {
+    // Add the document to the recent documents list
+    if (props.addRecentDoc) {
+      await props.addRecentDoc(props.result);
+      window.open(url, "_blank");
+    }
+  };
   return (
     <div className="fixed top-0 left-0 w-screen h-screen flex flex-row justify-center items-center bg-[rgba(0,0,0,0.5)]">
       <div
@@ -17,7 +113,7 @@ export const ResultModal = (props: ResultModalProps) => {
         onClick={props.closeModal}
       ></div>
       <div
-        className="w-4/5 h-[85vh] flex flex-col justify-center items-center p-[20px] gap-[0px] z-20 bg-[#fff] rounded-[10px]"
+        className="w-4/5 h-[85vh] flex flex-col items-center p-[20px] gap-[0px] z-20 bg-[#fff] rounded-[10px]"
         onClick={() => {}}
       >
         <div className="w-full flex flex-row items-start p-[10px] gap-[20px]">
@@ -73,24 +169,20 @@ export const ResultModal = (props: ResultModalProps) => {
               )} */}
             </div>
             <div className="w-full flex flex-row items-center p-[10px] gap-[40px]">
-              <a
-                href={props.result.url}
-                target="_blank"
-                rel="noreferrer"
-                className="w-full max-w-[250px] no-underline color text-white cursor-pointer"
+              <button
+                onClick={() => handleOpenClick(props.result.url)}
+                className="w-full max-w-[250px] h-[45px] bg-[#0d7e97] text-white font-dm-sans font-bold rounded-[10px] cursor-pointer border-none outline-none"
               >
-                <button className="w-full max-w-[250px] h-[45px] bg-[#0d7e97] text-white font-dm-sans font-bold rounded-[10px] cursor-pointer border-none outline-none">
-                  Open
+                Open
+              </button>
+              {props.result.data_source === "google_drive" && (
+                <button
+                  className="text-black font-dm-sans bg-[rgba(0,0,0,0)] cursor-pointer hover:underline"
+                  onClick={() => handleOpenClick(getDownloadUrl(props.result))}
+                >
+                  Download
                 </button>
-              </a>
-              <a
-                className="text-black font-dm-sans"
-                href={getDownloadUrl(props.result)}
-                target="_blank"
-                rel="noreferrer"
-              >
-                Download
-              </a>
+              )}
             </div>
           </div>
           <button
@@ -103,13 +195,133 @@ export const ResultModal = (props: ResultModalProps) => {
 
         {props.result.data_source === "google_drive" && (
           <iframe
-            className="w-full h-full"
+            className="w-full h-full border-0"
             src={getPreviewUrl(props.result)}
             allow="autoplay"
             allowFullScreen={true}
             title="Document Preview"
           />
         )}
+        {props.result.data_source === "slack" &&
+          (slackMessages ? (
+            <div className="w-full h-full overflow-hidden flex flex-col gap-[20px]">
+              <div className="flex flex-col w-full sticky">
+                <div className="w-full px-[10px] flex flex-row items-center gap-[10px] py-[20px] bg-[#350D36] border-b-[2px] border-b-[rgba(0,0,0,0.2)]">
+                  <img src={SlackLogo} alt="Slack Logo" className="w-[32px]" />
+                  <span className="font-larsseit font-bold text-2xl text-white">
+                    Slack
+                  </span>
+                </div>
+                <div className="w-full px-[10px] py-[20px] bg-white border-b-[2px] border-b-[rgba(0,0,0,0.2)]">
+                  <span className="font-dm-sans font-bold text-xl">
+                    #{props.result.location}
+                  </span>
+                </div>
+              </div>
+              <div className="w-full h-full overflow-y-scroll flex flex-col gap-[20px]">
+                {slackMessages.messages.map(
+                  (message, index) =>
+                    (!message.subtype ||
+                      message.subtype !== "channel_join") && (
+                      <div
+                        key={index}
+                        className={
+                          "w-full flex flex-row items-start p-[10px] gap-[2px] " +
+                          (matchedMessage && matchedMessage.ts === message.ts
+                            ? "bg-[rgba(13,126,151,0.12)] font-bold"
+                            : "")
+                        }
+                        ref={
+                          matchedMessage && matchedMessage.ts === message.ts
+                            ? matchedMessageRef
+                            : null
+                        }
+                      >
+                        <div className="flex flex-row gap-[10px]">
+                          {message.user.image_48 && (
+                            <img
+                              src={message.user.image_48}
+                              alt={message.user.display_name}
+                              className="w-[48px] h-[48px] rounded-[10px]"
+                            />
+                          )}
+                        </div>
+                        <div className="w-full flex flex-col items-start px-[10px] gap-[4px]">
+                          {message.user.display_name ? (
+                            <span className="text-md font-dm-sans font-bold">
+                              {message.user.display_name}
+                            </span>
+                          ) : (
+                            <span className="text-md font-dm-sans font-bold">
+                              {message.user.first_name}
+                            </span>
+                          )}
+                          {message.text &&
+                            (!message.subtype ||
+                              message.subtype !== "channel_join") && (
+                              <span
+                                className={"text-md font-dm-sans font-regular"}
+                              >
+                                {message.text}
+                              </span>
+                            )}
+                          {message.files &&
+                            message.files.map((file, index) => (
+                              <div
+                                key={index}
+                                className="w-full h-full min-w-[150px] max-w-[300px] flex flex-col items-start p-[24px] gap-[24px] rounded-[10px] border-[1px] border-[rgba(0,0,0,0.1)]"
+                              >
+                                <div className="flex flex-row items-end gap-[10px]">
+                                  {file.mimetype && (
+                                    <img
+                                      src={
+                                        file.mimetype === "application/pdf"
+                                          ? Pdf
+                                          : file.mimetype ===
+                                            "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                                          ? Pptx
+                                          : ""
+                                      }
+                                      alt={file.name}
+                                      className="h-[48px] w-[48px]"
+                                    />
+                                  )}
+                                  <div className="flex flex-col gap-[2px]">
+                                    <span
+                                      className={
+                                        "text-md font-dm-sans font-bold line-clamp-1"
+                                      }
+                                    >
+                                      {file.name}
+                                    </span>
+                                    {file.filetype && (
+                                      <span className="line-clamp-1">
+                                        {file.filetype.toUpperCase()}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={() =>
+                                    handleOpenClick(props.result.url)
+                                  }
+                                  className="w-full h-[45px] bg-[rgba(0,0,0,0.04)] text-black font-dm-sans font-bold rounded-[10px] cursor-pointer border-none outline-none hover:bg-[rgba(13,126,151,0.12)] hover:text-[#0d7e97]"
+                                >
+                                  Open in Slack
+                                </button>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    )
+                )}
+              </div>
+            </div>
+          ) : (
+            <>
+              <p>Loading</p>
+            </>
+          ))}
       </div>
     </div>
   );
@@ -150,11 +362,13 @@ const getDownloadUrl = (result: SearchResultDetails) => {
 };
 
 const getPreviewUrl = (result: SearchResultDetails) => {
-  // If the url ends with "/edit", remove that
-  let trimmedUrl = trimGoogleUrl(result.url);
-  // add /preview
-  let finalUrl = trimmedUrl + "/preview";
-  return finalUrl;
+  if (result.data_source === "google_drive") {
+    // If the url ends with "/edit", remove that
+    let trimmedUrl = trimGoogleUrl(result.url);
+    // add /preview
+    let finalUrl = trimmedUrl + "/preview";
+    return finalUrl;
+  }
 };
 
 const trimGoogleUrl = (url: string) => {
@@ -168,3 +382,90 @@ const trimGoogleUrl = (url: string) => {
   }
   return trimmedUrl;
 };
+
+const getSlackUrlParams = (slackUrl: string) => {
+  const url = new URLSearchParams(slackUrl);
+  const channel = slackUrl.split("channel=")[1].split("&")[0];
+  const ts = url.get("message_ts");
+  if (!ts) {
+    throw new Error("ts not found in slack url");
+  }
+  if (!channel) {
+    throw new Error("channel not found in slack url");
+  }
+  return { channel, ts };
+};
+
+interface SlackBlock {
+  type: string;
+  block_id: string;
+  elements: SlackBlockElement[];
+}
+
+interface SlackBlockElement {
+  type: string;
+  elements: SlackBlockTextElement[];
+}
+
+interface SlackBlockTextElement {
+  type: string;
+  text: string;
+}
+
+interface UserDetails {
+  display_name?: string;
+  first_name?: string;
+  image_48?: string;
+  id?: string;
+}
+
+interface SlackFile {
+  id: string;
+  created: number;
+  timestamp: number;
+  name: string;
+  title: string;
+  mimetype: string;
+  filetype: string;
+  pretty_type: string;
+  user: string;
+  user_team: string;
+  editable: boolean;
+  size: number;
+  mode: string;
+  is_external: boolean;
+  external_type: string;
+  is_public: boolean;
+  public_url_shared: boolean;
+  display_as_bot: boolean;
+  username: string;
+  url_private: string;
+  url_private_download: string;
+  media_display_type: string;
+  thumb_pdf: string;
+  thumb_pdf_w: number;
+  thumb_pdf_h: number;
+  permalink: string;
+  permalink_public: string;
+  is_starred: boolean;
+  has_rich_preview: boolean;
+  file_access: string;
+}
+
+interface SlackMessage {
+  type: string;
+  subtype?: string;
+  ts: string;
+  user: UserDetails;
+  text: string;
+  blocks?: SlackBlock[];
+  files?: SlackFile[];
+  upload?: boolean;
+  display_aw_bot?: boolean;
+  client_msg_id?: string;
+}
+
+interface SlackMessagesResponse {
+  messages: SlackMessage[];
+  currentMessage: SlackMessage;
+}
