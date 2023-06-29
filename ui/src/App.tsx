@@ -69,7 +69,7 @@ import AddOrganisation from "./components/add-organisation";
 export interface AppState {
   authed: boolean | "loading";
   user: User | null;
-  userDoc: UserDoc | null;
+  userDoc: UserDoc | null | "loading";
   query: string;
   results: SearchResultDetails[];
   searchDuration: number;
@@ -156,7 +156,7 @@ export default class App extends React.Component<{}, AppState> {
     this.state = {
       authed: "loading",
       user: null,
-      userDoc: null,
+      userDoc: "loading",
       query: "",
       results: [], // CHANGED!!
       dataSourceTypes: [],
@@ -469,6 +469,7 @@ export default class App extends React.Component<{}, AppState> {
         setTimeout(() => this.fetchStatsusForever(), timeToSleep);
       })
       .catch((err) => {
+        console.log(err);
         this.setState({ serverDownCount: this.state.serverDownCount + 1 });
 
         if (this.state.serverDownCount > 5 && !document.hidden) {
@@ -658,6 +659,7 @@ export default class App extends React.Component<{}, AppState> {
   render() {
     return (
       <div>
+        <ToastContainer className="z-50" theme="colored" />
         {/* Changed!! Added Nav */}
         <div className="fixed h-screen w-[100px] bg-[#e5e5e5] flex flex-col items-center px-[20px] py-[40px] gap-[40px] z-10">
           <button onClick={this.goHomePage} className="cursor-pointer">
@@ -784,7 +786,7 @@ export default class App extends React.Component<{}, AppState> {
         )}
 
         {/* Login or loading or app */}
-        {this.state.authed === "loading" ? (
+        {this.state.authed === "loading" || this.state.userDoc === "loading" ? (
           <div className="w-screen z-10 filter min-h-screen bg-white flex flex-col items-center py-[80px] px-[100px] gap-[80px]">
             <div className=" flex flex-col items-center justify-center gap-[10px]">
               <div className="w-20 h-20 rounded-full animate-pulse bg-[rgba(0,0,0,0.04)] dark:bg-[rgba(0,0,0,0.8)]"></div>

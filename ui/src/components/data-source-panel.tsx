@@ -11,7 +11,6 @@ import airtableLogo from "../assets/images/airtable.png";
 import gmailLogo from "../assets/images/gmail.png";
 import githubLogo from "../assets/images/github.png";
 
-
 import { FaRegEdit } from "react-icons/fa";
 import { AiFillCheckCircle } from "react-icons/ai";
 import { BiLinkExternal } from "react-icons/bi";
@@ -293,7 +292,11 @@ export default class DataSourcePanel extends React.Component<
                 onClick={() => {}}
                 className="flex hover:text-[#9875d4] py-2 pl-5 pr-3 m-2 flex-row items-center justify-center bg-[rgba(0,0,0,0.06)] hover:border-[#0D7E97] rounded-lg font-dm-sans leading-[28px] border-[#000] border-b-[.5px] transition duration-300 ease-in-out"
               >
-                <img alt="" className={"mr-2 h-[20px]"} src={airtableLogo}></img>
+                <img
+                  alt=""
+                  className={"mr-2 h-[20px]"}
+                  src={airtableLogo}
+                ></img>
                 {/* <h1 className="text-black">Add</h1> */}
                 <h1 className="text-gray-500 font-dm-sans">Coming soon...</h1>
                 <IoAddCircleOutline className="ml-6 text-gray-500 text-2xl transition duration-200 ease-in-out"></IoAddCircleOutline>
@@ -925,6 +928,7 @@ export default class DataSourcePanel extends React.Component<
   removeDataSource = (index: number) => {
     if (this.props.inIndexing) {
       toast.error("Cannot remove data source while indexing is in progress");
+      console.log("Index error 238047295824895720349");
       return;
     }
 
