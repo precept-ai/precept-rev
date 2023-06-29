@@ -4,7 +4,7 @@ import axios from "axios";
 // export const api = axios.create({
 //   baseURL: `${window.location.protocol}//${window.location.hostname}:${port}/api/v1`,
 // })
-const port = "http://34.163.248.187:8000";
+const port = "https://34.163.248.187";
 export const api = axios.create({
   baseURL: `${port}/api/v1`,
 });
