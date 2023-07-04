@@ -417,7 +417,7 @@ export default class App extends React.Component<{}, AppState> {
 
   async fetchStatsusForever() {
     let timeBetweenFailToast = 5;
-    let failSleepSeconds = 1;
+    let failSleepSeconds = 2;
     api
       .get<ServerStatus>("/status", { timeout: 3000 })
       .then((res) => {
@@ -465,7 +465,7 @@ export default class App extends React.Component<{}, AppState> {
           timeSinceLastIndexing: lastIndexingTime,
         });
 
-        let timeToSleep = 1000;
+        let timeToSleep = 2000;
         setTimeout(() => this.fetchStatsusForever(), timeToSleep);
       })
       .catch((err) => {
@@ -675,12 +675,12 @@ export default class App extends React.Component<{}, AppState> {
           <button onClick={this.openModal} className="cursor-pointer">
             <DataIcon />
           </button>
-          <button
+          {/* <button
             onClick={this.toggleShowOrganisations}
             className="cursor-pointer"
           >
             <DataIcon />
-          </button>
+          </button> */}
           {this.state.authed === true ? (
             <button onClick={this.handleSignOut} className="cursor-pointer">
               <LogoutIcon />
