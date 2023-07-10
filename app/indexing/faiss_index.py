@@ -46,6 +46,7 @@ class FaissIndex:
         if queries.ndim == 1:
             queries = queries.unsqueeze(0)
         _, ids = self.index.search(queries.cpu(), top_k, *args, **kwargs)
+        print(ids)
         return ids
 
     def clear(self):
