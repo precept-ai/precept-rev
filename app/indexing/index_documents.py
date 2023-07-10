@@ -6,8 +6,8 @@ from typing import List, Optional
 from data_source.api.basic_document import BasicDocument, FileType
 from db_engine import Session
 from indexing.bm25_index import Bm25Index
-# from indexing.faiss_index import FaissIndex
-from indexing.pinecone_index import PineconeIndex
+from indexing.faiss_index import FaissIndex
+# from indexing.pinecone_index import PineconeIndex
 from models import bi_encoder
 # from parsers.pdf import split_PDF_into_paragraphs
 from paths import IS_IN_DOCKER
@@ -96,8 +96,8 @@ class Indexer:
             paragraph_ids = [paragraph.id for paragraph in paragraphs]
             paragraph_contents = [Indexer._add_metadata_for_indexing(paragraph) for paragraph in paragraphs]
 
-        # logger.info(f"Updating BM25 index...")
-        # Bm25Index.get().update()
+        logger.info(f"Updating BM25 index...")
+        Bm25Index.get().update()
 
         if len(paragraph_contents) == 0:
             return
@@ -109,8 +109,8 @@ class Indexer:
 
         # Add the embeddings to the index
         logger.info(f"Updating Faiss index...")
-        # FaissIndex.get().update(paragraph_ids, embeddings)
-        PineconeIndex.get().update(paragraph_ids, embeddings)
+        FaissIndex.get().update(paragraph_ids, embeddings)
+        # PineconeIndex.get().update(paragraph_ids, embeddings)
 
         logger.info(f"Finished indexing {len(documents)} documents => {len(paragraphs)} paragraphs")
 
@@ -145,19 +145,18 @@ class Indexer:
 
     @staticmethod
     def remove_documents(documents: List[Document], session=None):
-        pass
-        # logger.info(f"Removing {len(documents)} documents")
+        logger.info(f"Removing {len(documents)} documents")
 
-        # # Get the paragraphs from the documents
-        # db_paragraphs = [paragraph for document in documents for paragraph in document.paragraphs]
+        # Get the paragraphs from the documents
+        db_paragraphs = [paragraph for document in documents for paragraph in document.paragraphs]
 
-        # # Remove the paragraphs from the index
-        # paragraph_ids = [paragraph.id for paragraph in db_paragraphs]
+        # Remove the paragraphs from the index
+        paragraph_ids = [paragraph.id for paragraph in db_paragraphs]
 
-        # logger.info(f"Removing documents from faiss index...")
-        # FaissIndex.get().remove(paragraph_ids)
+        logger.info(f"Removing documents from faiss index...")
+        FaissIndex.get().remove(paragraph_ids)
 
-        # logger.info(f"Removing documents from BM25 index...")
-        # Bm25Index.get().update(session=session)
+        logger.info(f"Removing documents from BM25 index...")
+        Bm25Index.get().update(session=session)
 
-        # logger.info(f"Finished removing {len(documents)} documents => {len(db_paragraphs)} paragraphs")
+        logger.info(f"Finished removing {len(documents)} documents => {len(db_paragraphs)} paragraphs")
