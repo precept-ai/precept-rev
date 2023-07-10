@@ -21,9 +21,9 @@ from models import bi_encoder, cross_encoder_small, cross_encoder_large, qa_mode
 from schemas import Paragraph, Document
 from util import threaded_method
 
-BM_25_CANDIDATES = 100 if torch.cuda.is_available() else 20
-BI_ENCODER_CANDIDATES = 60 if torch.cuda.is_available() else 20
-SMALL_CROSS_ENCODER_CANDIDATES = 30 if torch.cuda.is_available() else 10
+BM_25_CANDIDATES = 100 if torch.cuda.is_available() else 5   #  20
+BI_ENCODER_CANDIDATES = 60 if torch.cuda.is_available() else 5     # 20
+SMALL_CROSS_ENCODER_CANDIDATES = 30 if torch.cuda.is_available() else 5
 
 nltk.download('punkt')
 logger = logging.getLogger(__name__)
@@ -191,6 +191,9 @@ def search_documents(query: str, top_k: int) -> List[SearchResult]:
     results = [int(id) for id in results if id != -1]  # filter out empty results
 
     results += Bm25Index.get().search(query, BM_25_CANDIDATES)
+    print('#'*100)
+    print(len(results))
+
     # Get the paragraphs from the database
     with Session() as session:
         paragraphs = session.query(Paragraph).filter(Paragraph.id.in_(results)).all()
