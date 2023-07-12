@@ -32,12 +32,16 @@ class PineconeIndex:
 	def update(self, ids: torch.LongTensor, embeddings: torch.FloatTensor):
 		# not sure what ids are here 
 		data = [(str(iD), embedding.tolist()) for iD, embedding in zip(ids, embeddings)]	
-		self.index.upsert(data, namespace=self.namespace)
+		# split in batches of 1000
+		data_batches = [data[i:i + 1000] for i in range(0, len(data), 1000)] 
+		for b in data_batches:
+			self.index.upsert(b)
 	
 	def remove(self, ids: List[int]):
 		ids = [str(i) for i in ids] 
-		print(ids)
-		self.index.delete(ids, namespace=self.namespace)
+		ids = [ids[i:i + 1000] for i in range(0, len(ids), 1000)]
+		for batch in ids:
+			self.index.delete(batch, namespace=self.namespace)
 
 	def search(self, queries: torch.FloatTensor, top_k: int, *args, **kwargs):
 		# if queries.ndim == 1:
