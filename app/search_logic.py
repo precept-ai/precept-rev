@@ -16,14 +16,14 @@ from data_source.api.basic_document import DocumentType, FileType, DocumentStatu
 from data_source.api.utils import get_confluence_user_image
 from db_engine import Session
 from indexing.bm25_index import Bm25Index
-from indexing.pinecone_index import PineconeIndex
+from indexing.faiss_index import FaissIndex
 from models import bi_encoder, cross_encoder_small, cross_encoder_large, qa_model
 from schemas import Paragraph, Document
 from util import threaded_method
 
-BM_25_CANDIDATES = 100 if torch.cuda.is_available() else 5   #  20
-BI_ENCODER_CANDIDATES = 60 if torch.cuda.is_available() else 5     # 20
-SMALL_CROSS_ENCODER_CANDIDATES = 30 if torch.cuda.is_available() else 5
+BM_25_CANDIDATES = 100 if torch.cuda.is_available() else 20
+BI_ENCODER_CANDIDATES = 60 if torch.cuda.is_available() else 20
+SMALL_CROSS_ENCODER_CANDIDATES = 30 if torch.cuda.is_available() else 10
 
 nltk.download('punkt')
 logger = logging.getLogger(__name__)
@@ -181,9 +181,9 @@ def search_documents(query: str, top_k: int) -> List[SearchResult]:
     query_embedding = bi_encoder.encode(query, convert_to_tensor=True, show_progress_bar=False)
 
     # Search the index for 100 candidates
-    index = PineconeIndex.get()
+    index = FaissIndex.get()
 
-    print('calling pinecone')
+    print('calling index')
     print('#'*100)
 
     results = index.search(query_embedding, BI_ENCODER_CANDIDATES)

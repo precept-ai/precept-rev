@@ -3,14 +3,14 @@ import re
 from enum import Enum
 from typing import List, Optional
 
-from data_source.api.basic_document import BasicDocument, FileType
+from data_source.api.basic_document import BasicDocument
 from db_engine import Session
 from indexing.bm25_index import Bm25Index
-from indexing.pinecone_index import PineconeIndex
+from indexing.faiss_index import FaissIndex
 from models import bi_encoder
 from paths import IS_IN_DOCKER
 from schemas import Document, Paragraph
-from langchain.schema import Document as PDFDocument
+# from langchain.schema import Document as PDFDocument
 
 
 logger = logging.getLogger(__name__)
@@ -107,7 +107,7 @@ class Indexer:
 
         # Add the embeddings to the index
         logger.info(f"Updating vector index...")
-        PineconeIndex.get().update(paragraph_ids, embeddings)
+        FaissIndex.get().update(paragraph_ids, embeddings)
 
         logger.info(f"Finished indexing {len(documents)} documents => {len(paragraphs)} paragraphs")
 
@@ -151,7 +151,7 @@ class Indexer:
         paragraph_ids = [paragraph.id for paragraph in db_paragraphs]
 
         logger.info(f"Removing documents from vector index...")
-        PineconeIndex.get().remove(paragraph_ids)
+        FaissIndex.get().remove(paragraph_ids)
 
         logger.info(f"Removing documents from BM25 index...")
         Bm25Index.get().update(session=session)
