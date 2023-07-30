@@ -29,6 +29,19 @@ class NotionDataSource(BaseDataSource):
     async def validate_config(config: Dict) -> None:
         try: 
             token = config['token']
+            url = 'https://api.notion.com/v1/search'
+            headers = {
+                'Authorization': 'Bearer YOUR_NOTION_API_KEY',
+                'Content-Type': 'application/json',
+                'Notion-Version': '2022-06-28'
+            }
+            data = {
+                "page_size": "1"
+            }
+            response = requests.post(url, headers=headers, json=data)
+
+            if response.status_code != 200:
+                raise Exception('Connection to notion failed')
             # send a request to notion with the token in the config
         except Exception as e:
             raise Exception('Connection to notion failed')
