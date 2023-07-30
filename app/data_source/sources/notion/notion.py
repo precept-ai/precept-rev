@@ -31,7 +31,7 @@ class NotionDataSource(BaseDataSource):
             token = config['token']
             url = 'https://api.notion.com/v1/search'
             headers = {
-                'Authorization': 'Bearer YOUR_NOTION_API_KEY',
+                'Authorization': f'Bearer {token}',
                 'Content-Type': 'application/json',
                 'Notion-Version': '2022-06-28'
             }
@@ -119,8 +119,8 @@ class NotionDataSource(BaseDataSource):
                 BasicDocument(**{
                     "id": item["id"],
                     "data_source_id": "",
-                    "type": "",
-                    "title": DocumentType.DOCUMENT,
+                    "type": DocumentType.DOCUMENT,
+                    "title": title,
                     "content": page_content,
                     "author": item["created_by"]["id"],
                     "author_image_url": "",
