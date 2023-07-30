@@ -389,7 +389,9 @@ export default class App extends React.Component<{}, AppState> {
       const response = await api.get<DataSourceType[]>("/data-sources/types");
       const filteredResponse = response.data.filter(
         (response) =>
-          response.name === "google_drive" || response.name === "slack"
+          response.name === "google_drive" ||
+          response.name === "slack" ||
+          response.name === "notion"
       );
       let dataSourceTypesDict: { [key: string]: DataSourceType } = {};
       filteredResponse.forEach((dataSourceType) => {

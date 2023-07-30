@@ -80,10 +80,11 @@ export const SearchResult = (props: SearchResultProps) => {
       }
       onClick={
         props.openModal
-          ? props.resultDetails.data_source === "slack"
+          ? props.resultDetails.data_source === "slack" ||
+            props.resultDetails.data_source === "google_drive"
             ? () => props.openModal(props.resultDetails)
             : // () => handleOpenClick()
-              () => props.openModal(props.resultDetails)
+              () => {}
           : () => {}
       }
     >
