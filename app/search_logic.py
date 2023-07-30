@@ -16,7 +16,7 @@ from data_source.api.basic_document import DocumentType, FileType, DocumentStatu
 from data_source.api.utils import get_confluence_user_image
 from db_engine import Session
 from indexing.bm25_index import Bm25Index
-from indexing.pinecone_index import PineconeIndex
+from indexing.faiss_index import FaissIndex
 from models import bi_encoder, cross_encoder_small, cross_encoder_large, qa_model
 from schemas import Paragraph, Document
 from util import threaded_method
@@ -181,7 +181,7 @@ def search_documents(query: str, top_k: int) -> List[SearchResult]:
     query_embedding = bi_encoder.encode(query, convert_to_tensor=True, show_progress_bar=False)
 
     # Search the index for 100 candidates
-    index = PineconeIndex.get()
+    index = FaissIndex.get()
 
     print('calling pinecone')
     print('#'*100)

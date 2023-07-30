@@ -16,7 +16,7 @@ from data_source.api.utils import get_utc_time_now
 from db_engine import Session
 from indexing.background_indexer import BackgroundIndexer
 from indexing.bm25_index import Bm25Index
-from indexing.pinecone_index import PineconeIndex
+from indexing.faiss_index import FaissIndex
 from queues.index_queue import IndexQueue
 from paths import UI_PATH
 from queues.task_queue import TaskQueue
@@ -112,7 +112,7 @@ def send_daily_telemetry():
 async def startup_event():
     if not torch.cuda.is_available():
         logger.warning("CUDA is not available, using CPU. This will make indexing and search very slow!!!")
-    PineconeIndex.create()
+    FaissIndex.create()
     Bm25Index.create()
     DataSourceContext.init()
     BackgroundIndexer.start()
@@ -140,7 +140,7 @@ def status():
 
 @app.post("/clear-index")
 async def clear_index():
-    PineconeIndex.get().clear()
+    FaissIndex.get().clear()
     Bm25Index.get().clear()
     with Session() as session:
         session.query(Document).delete()
