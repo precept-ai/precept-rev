@@ -8,10 +8,10 @@ from data_source.api.basic_document import BasicDocument, DocumentType
 from queues.index_queue import IndexQueue
 import requests
 import json 
+from datetime import timezone
 
 
 class NotionConfig(BaseDataSourceConfig):
-    url: str     # not sure we need this 
     token: str
 
 
@@ -27,28 +27,32 @@ class NotionDataSource(BaseDataSource):
 
     @staticmethod
     async def validate_config(config: Dict) -> None:
-        try: 
-            token = config['token']
-            url = 'https://api.notion.com/v1/search'
-            headers = {
-                'Authorization': f'Bearer {token}',
-                'Content-Type': 'application/json',
-                'Notion-Version': '2022-06-28'
-            }
-            data = {
-                "page_size": "1"
-            }
-            response = requests.post(url, headers=headers, json=data)
+        print('heeeeeeeeeeyy')
+        print(config)
+        pass 
+        # try: 
+        #     token = config['token']
+        #     url = 'https://api.notion.com/v1/search'
+        #     headers = {
+        #         'Authorization': f'Bearer {token}',
+        #         'Content-Type': 'application/json',
+        #         'Notion-Version': '2022-06-28'
+        #     }
+        #     data = {
+        #         "page_size": "1"
+        #     }
+        #     response = requests.post(url, headers=headers, json=data)
 
-            if response.status_code != 200:
-                raise Exception('Connection to notion failed')
-            # send a request to notion with the token in the config
-        except Exception as e:
-            raise Exception('Connection to notion failed')
+        #     if response.status_code != 200:
+        #         raise Exception(f'Connection to notion failed, code {response.status_code}')
+        #     # send a request to notion with the token in the config
+        # except Exception as e:
+        #     raise Exception(f'Connection to notion failed {e}')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        notion_config = NotionConfig(**self._config)
+
+        notion_config = NotionConfig(**self._raw_config)
         self.notion_token = notion_config.token
 
     def get_page_content(self, page_id):
@@ -98,6 +102,7 @@ class NotionDataSource(BaseDataSource):
 
         docs = []
         for item in notion_data["results"]:
+            print('NEW ITEM')
             title = ""
             if item["properties"].get("title"):
                 title = item["properties"]["title"]["title"][0]["plain_text"]
@@ -115,24 +120,21 @@ class NotionDataSource(BaseDataSource):
             if item["object"] == "page":
                 page_content = self.get_page_content(item["id"])
 
-            docs.append(
-                BasicDocument(**{
-                    "id": item["id"],
-                    "data_source_id": "",
-                    "type": DocumentType.DOCUMENT,
-                    "title": title,
-                    "content": page_content,
-                    "author": item["created_by"]["id"],
-                    "author_image_url": "",
-                    "location": item["parent"]["page_id"] if item["parent"]["type"] == "page" else item["parent"]["database_id"] if item["parent"]["type"] == "database_id" else "",
-                    "url": item["url"],
-                    "timestamp": item["last_edited_time"], 
-                })
-            ) 
-
-        for doc in docs:
-            last_modified = datetime.strptime(doc["updated_at"], "%Y-%m-%dT%H:%M:%S.%f%z")
-            if last_modified < self._last_index_time:
-                # logger.info(f"Message {d['id']} is too old, skipping")
+            doc = BasicDocument(**{
+                "id": item["id"],
+                "data_source_id": "",
+                "type": DocumentType.DOCUMENT,
+                "title": title,
+                "content": page_content,
+                "author": item["created_by"]["id"],
+                "author_image_url": "",
+                "location": item["parent"]["page_id"] if item["parent"]["type"] == "page" else item["parent"]["database_id"] if item["parent"]["type"] == "database_id" else "",
+                "url": item["url"],
+                "timestamp": datetime.strptime(item["last_edited_time"], "%Y-%m-%dT%H:%M:%S.%f%z")
+            })
+            print(f'INDEXING {doc.title}')
+            last_modified = doc.timestamp 
+            if last_modified.replace(tzinfo=timezone.utc) < self._last_index_time.replace(tzinfo=timezone.utc):
+                print(f"Message {doc.title}, {doc.id} is too old, skipping")
                 continue
             IndexQueue.get_instance().put_single(doc)
