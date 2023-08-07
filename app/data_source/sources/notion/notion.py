@@ -4,7 +4,7 @@ from typing import List, Dict
 
 from pydantic import BaseModel
 from data_source.api.base_data_source import BaseDataSource, BaseDataSourceConfig, ConfigField
-from data_source.api.basic_document import BasicDocument, DocumentType
+from data_source.api.basic_document import BasicDocument, DocumentType, FileType
 from queues.index_queue import IndexQueue
 import requests
 import json 
@@ -122,15 +122,16 @@ class NotionDataSource(BaseDataSource):
 
             doc = BasicDocument(**{
                 "id": item["id"],
-                "data_source_id": "",
+                "data_source_id": self._data_source_id,
                 "type": DocumentType.DOCUMENT,
                 "title": title,
                 "content": page_content,
                 "author": item["created_by"]["id"],
                 "author_image_url": "",
-                "location": item["parent"]["page_id"] if item["parent"]["type"] == "page" else item["parent"]["database_id"] if item["parent"]["type"] == "database_id" else "",
                 "url": item["url"],
-                "timestamp": datetime.strptime(item["last_edited_time"], "%Y-%m-%dT%H:%M:%S.%f%z")
+                "location": item["parent"]["page_id"] if item["parent"]["type"] == "page" else item["parent"]["database_id"] if item["parent"]["type"] == "database_id" else "",
+                "timestamp": datetime.strptime(item["last_edited_time"], "%Y-%m-%dT%H:%M:%S.%f%z"),
+                'file_type': FileType.TXT,
             })
             print(f'INDEXING {doc.title}')
             last_modified = doc.timestamp 
